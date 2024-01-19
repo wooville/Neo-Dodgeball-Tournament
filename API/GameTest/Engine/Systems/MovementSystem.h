@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../App/AppSettings.h"
 #include "../ECS/ECS.h"
 #include "../Components/TransformComponent.h"
 #include "../Components/RigidBodyComponent.h"
@@ -58,28 +59,22 @@ public:
 			transform.x += rigidbody.velocityX*deltaTime;
 			transform.y += rigidbody.velocityY*deltaTime;
 
-			// update CSimpleSprite positions to match transforms
-			if (entity.HasComponent<SpriteComponent>()) {
-				auto& sprite = entity.GetComponent<SpriteComponent>();
-				sprite.simpleSprite->SetPosition(transform.x, transform.y);
-			}
-
 			if (entity.HasTag("player")) {
 				int paddingTop = 8;
 				int paddingRight = 8;
 				int paddingDown = 8;
 				int paddingLeft = 8;
 				transform.x = transform.x < paddingLeft ? paddingLeft : transform.x;
-				//transform.position.x = transform.position.x > Game::mapWidth - paddingRight ? Game::mapWidth - paddingRight : transform.position.x;
+				transform.x = transform.x > APP_VIRTUAL_WIDTH - paddingRight ? APP_VIRTUAL_WIDTH - paddingRight : transform.x;
 				transform.y = transform.y < paddingLeft ? paddingLeft : transform.y;
-				//transform.position.y = transform.position.y > Game::mapWidth - paddingRight ? Game::mapWidth - paddingRight : transform.position.y;
+				transform.y = transform.y > APP_VIRTUAL_HEIGHT - paddingRight ? APP_VIRTUAL_HEIGHT - paddingRight : transform.y;
 			}
 
 			bool isEntityOutsideMap = (
 				transform.x < 0 ||
-				//transform.position.x > Game::mapWidth ||
-				transform.y < 0 /*||*/
-				//transform.position.y > Game::mapHeight
+				transform.x > APP_VIRTUAL_WIDTH ||
+				transform.y < 0 ||
+				transform.y > APP_VIRTUAL_HEIGHT
 			);
 
 			if (isEntityOutsideMap && !entity.HasTag("player")) {

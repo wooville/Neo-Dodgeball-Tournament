@@ -102,10 +102,10 @@
     <ClInclude Include="Engine\Systems\RenderSystem.h">
       <Filter>Engine\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Systems\InputSystem.h">
+    <ClInclude Include="Engine\Systems\PlayerAbilitiesSystem.h">
       <Filter>Engine\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Components\InputComponent.h">
+    <ClInclude Include="Engine\Components\PlayerAbilitiesComponent.h">
       <Filter>Engine\Components</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Systems\MovementSystem.h">

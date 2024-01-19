@@ -29,6 +29,9 @@ public:
 				renderableEntity.transformComponent = entity.GetComponent<TransformComponent>();
 				renderableEntity.spriteComponent = entity.GetComponent<SpriteComponent>();
 
+				// update CSimpleSprite positions to match transforms when rendering
+				renderableEntity.spriteComponent.simpleSprite->SetPosition(renderableEntity.transformComponent.x, renderableEntity.transformComponent.y);
+
 				//// don't bother rendering entities outside of camera
 				//bool isEntityOutsideCameraView = (
 				//	renderableEntity.transformComponent.position.x + (renderableEntity.transformComponent.scale.x * renderableEntity.spriteComponent.width) < camera.x ||

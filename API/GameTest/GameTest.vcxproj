@@ -186,7 +186,7 @@
     <ClInclude Include="Engine\Components\BoxColliderComponent.h" />
     <ClInclude Include="Engine\Components\CameraFollowComponent.h" />
     <ClInclude Include="Engine\Components\HealthComponent.h" />
-    <ClInclude Include="Engine\Components\InputComponent.h" />
+    <ClInclude Include="Engine\Components\PlayerAbilitiesComponent.h" />
     <ClInclude Include="Engine\Components\ProjectileComponent.h" />
     <ClInclude Include="Engine\Components\ProjectileEmitterComponent.h" />
     <ClInclude Include="Engine\Components\RigidBodyComponent.h" />
@@ -201,7 +201,7 @@
     <ClInclude Include="Engine\Systems\AnimationSystem.h" />
     <ClInclude Include="Engine\Systems\CollisionSystem.h" />
     <ClInclude Include="Engine\Systems\DamageSystem.h" />
-    <ClInclude Include="Engine\Systems\InputSystem.h" />
+    <ClInclude Include="Engine\Systems\PlayerAbilitiesSystem.h" />
     <ClInclude Include="Engine\Systems\MovementSystem.h" />
     <ClInclude Include="Engine\Systems\ProjectileEmitSystem.h" />
     <ClInclude Include="Engine\Systems\ProjectileLifecycleSystem.h" />

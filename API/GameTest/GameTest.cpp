@@ -17,7 +17,7 @@
 #include "Engine/Systems/CollisionSystem.h"
 //#include "Engine/Systems/RenderColliderSystem.h"
 #include "Engine/Systems/DamageSystem.h"
-#include "Engine/Systems/InputSystem.h"
+#include "Engine/Systems/PlayerAbilitiesSystem.h"
 //#include "Engine/Systems/KeyboardControlSystem.h"
 //#include "Engine/Systems/CameraMovementSystem.h"
 #include "Engine/Systems/ProjectileEmitSystem.h"
@@ -27,20 +27,12 @@
 //#include "Engine/Systems/RenderGUISystem.h"
 //#include "Engine/Systems/ScriptSystem.h"
 //------------------------------------------------------------------------
-// Eample data....
-//------------------------------------------------------------------------
-//CSimpleSprite *testSprite;
-//enum
-//{
-//	ANIM_FORWARDS,
-//	ANIM_BACKWARDS,
-//	ANIM_LEFT,
-//	ANIM_RIGHT,
-//};
-//------------------------------------------------------------------------
 std::unique_ptr<Registry> registry;
 std::unique_ptr<EventBus> eventBus;
 //std::unique_ptr<AssetStore> assetStore;
+
+float gameTimer;
+int score;
 
 //------------------------------------------------------------------------
 // Called before first update. Do any initial setup here.
@@ -66,15 +58,15 @@ void Init()
 	//------------------------------------------------------------------------
 	Entity player = registry->CreateEntity();
 	player.AddComponent<TransformComponent>(400.0f, 400.0f);
-	player.AddComponent<SpriteComponent>(".\\TestData\\sq.bmp", 1, 1, 1);
+	player.AddComponent<SpriteComponent>(".\\TestData\\red_square.bmp", 1, 1, 1);
 	player.AddComponent<AnimationComponent>();
 	player.AddComponent<RigidBodyComponent>();
 	player.AddComponent<BoxColliderComponent>(32,32);
-	player.AddComponent<InputComponent>();
+	player.AddComponent<PlayerAbilitiesComponent>();
 	player.AddComponent<HealthComponent>(20);
-	player.AddComponent<ProjectileEmitterComponent>();
+	player.AddComponent<ProjectileEmitterComponent>(0.7, 0.7);
 	//player.GetComponent<SpriteComponent>().simpleSprite->SetScale(5.0f);
-	player.Tag("player");
+	player.Tag("player");	// tags are unique, one entity per tag
 
 	Entity npc = registry->CreateEntity();
 	npc.AddComponent<TransformComponent>(600.0f, 600.0f);
@@ -84,11 +76,17 @@ void Init()
 	npc.AddComponent<BoxColliderComponent>(140,140);
 	npc.AddComponent<HealthComponent>(20);
 	npc.AddComponent<ProjectileEmitterComponent>(-0.5, 0, 1000);
-	npc.Group("enemies");
+	npc.Group("enemies");	// groups are not unique, multiple entities per group
+
+	Entity pickup = registry->CreateEntity();
+	pickup.AddComponent<TransformComponent>(600.0f, 400.0f);
+	pickup.AddComponent<SpriteComponent>(".\\TestData\\blue_square.bmp", 1, 1, 1);
+	pickup.AddComponent<BoxColliderComponent>(32, 32);
+	pickup.Group("pickups");
 
 	registry->AddSystem<MovementSystem>();
 	registry->AddSystem<RenderSystem>();
-	registry->AddSystem<InputSystem>();
+	registry->AddSystem<PlayerAbilitiesSystem>();
 	registry->AddSystem<AnimationSystem>();
 	registry->AddSystem<CollisionSystem>();
 	//registry->AddSystem<RenderColliderSystem>();
@@ -100,6 +98,9 @@ void Init()
 	//registry->AddSystem<RenderHealthBarSystem>();
 	//registry->AddSystem<RenderGUISystem>();
 	//registry->AddSystem<ScriptSystem>();
+
+	gameTimer = 0.0;
+	score = 0;
 }
 
 //------------------------------------------------------------------------
@@ -138,12 +139,13 @@ void Update(float deltaTime)
 	// subscribe to events for all systems for current frame
 	registry->GetSystem<DamageSystem>().SubscribeToEvents(eventBus);
 	registry->GetSystem<ProjectileEmitSystem>().SubscribeToEvents(eventBus);
+	registry->GetSystem<PlayerAbilitiesSystem>().SubscribeToEvents(eventBus);
 
 	// update registry to process entities
 	registry->Update();
 
 	// invoke systems that need to update
-	registry->GetSystem<InputSystem>().Update(eventBus);
+	registry->GetSystem<PlayerAbilitiesSystem>().Update(eventBus);
 	registry->GetSystem<MovementSystem>().Update(deltaTime);
 	registry->GetSystem<AnimationSystem>().Update(deltaTime);
 	registry->GetSystem<CollisionSystem>().Update(eventBus);
@@ -151,6 +153,8 @@ void Update(float deltaTime)
 	registry->GetSystem<ProjectileEmitSystem>().Update(registry);
 	registry->GetSystem<ProjectileLifecycleSystem>().Update();
 	//registry->GetSystem<ScriptSystem>().Update(deltaTime, SDL_GetTicks());
+
+	gameTimer += deltaTime;
 }
 
 //------------------------------------------------------------------------
@@ -164,31 +168,38 @@ void Render()
 	//------------------------------------------------------------------------
 	// Example Text.
 	//------------------------------------------------------------------------
-	//App::Print(100, 100, "Sample Text");
+	
+	int seconds = static_cast<int>((gameTimer)/1000);
+	int minutes = static_cast<int>(seconds/60);
+
+	//std::string timeString = minutes + ":" + seconds;
+	App::Print(100, 100, std::to_string(gameTimer).c_str());
+	App::Print(100, 200, std::to_string(score).c_str());
 
 	//------------------------------------------------------------------------
 	// Example Line Drawing.
 	//------------------------------------------------------------------------
-	static float a = 0.0f;
-	float r = 1.0f;
-	float g = 1.0f;
-	float b = 1.0f;
-	a += 0.1f;
-	for (int i = 0; i < 20; i++)
-	{
+	//static float a = 0.0f;
+	//float r = 1.0f;
+	//float g = 1.0f;
+	//float b = 1.0f;
+	//a += 0.1f;
+	//for (int i = 0; i < 20; i++)
+	//{
 
-		float sx = 200 + sinf(a + i * 0.1f)*60.0f;
-		float sy = 200 + cosf(a + i * 0.1f)*60.0f;
-		float ex = 700 - sinf(a + i * 0.1f)*60.0f;
-		float ey = 700 - cosf(a + i * 0.1f)*60.0f;
-		g = (float)i / 20.0f;
-		b = (float)i / 20.0f;
-		App::DrawLine(sx, sy, ex, ey,r,g,b);
-	}
+	//	float sx = 200 + sinf(a + i * 0.1f)*60.0f;
+	//	float sy = 200 + cosf(a + i * 0.1f)*60.0f;
+	//	float ex = 700 - sinf(a + i * 0.1f)*60.0f;
+	//	float ey = 700 - cosf(a + i * 0.1f)*60.0f;
+	//	g = (float)i / 20.0f;
+	//	b = (float)i / 20.0f;
+	//	App::DrawLine(sx, sy, ex, ey,r,g,b);
+	//}
 
 	// TODO - draw colliders
 	//App::DrawLine();
 }
+
 //------------------------------------------------------------------------
 // Add your shutdown code here. Called when the APP_QUIT_KEY is pressed.
 // Just before the app exits.
