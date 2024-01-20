@@ -200,6 +200,7 @@
     <ClInclude Include="Engine\Events\PlayerActionEvent.h" />
     <ClInclude Include="Engine\Events\ScoreChangeEvent.h" />
     <ClInclude Include="Engine\Logger\Logger.h" />
+    <ClInclude Include="Engine\Scripts\EnemyBehaviour.h" />
     <ClInclude Include="Engine\Scripts\GameManagerBehaviour.h" />
     <ClInclude Include="Engine\Scripts\PlayerBehaviour.h" />
     <ClInclude Include="Engine\Systems\AnimationSystem.h" />

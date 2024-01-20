@@ -5,6 +5,7 @@
 #include "../EventBus/EventBus.h"
 #include "../Events/ScoreChangeEvent.h"
 #include "../Components/TextComponent.h"
+#include "../Scripts/EnemyBehaviour.h"
 
 // timers in ms
 #define TIMER_COORD_X (100.0f)
@@ -72,6 +73,7 @@ public:
 		newEnemy.AddComponent<BoxColliderComponent>(140, 140);
 		newEnemy.AddComponent<HealthComponent>(20);
 		newEnemy.AddComponent<ProjectileEmitterComponent>(-0.5, 0, 1000);
+		newEnemy.AddComponent<ScriptedBehaviourComponent>(std::make_shared<EnemyBehaviour>());
 		newEnemy.Group("enemies");
 	}
 

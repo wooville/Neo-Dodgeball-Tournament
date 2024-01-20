@@ -9,6 +9,7 @@
 #include "../EventBus/EventBus.h"
 #include "../Events/CollisionEvent.h"
 #include "../Scripts/PlayerBehaviour.h"
+#include "../Scripts/EnemyBehaviour.h"
 
 class DamageSystem : public System {
 public:
@@ -72,7 +73,12 @@ public:
 			health.health_val -= projectileComponent.hitDamage;
 
 			if (health.health_val <= 0) {
-				enemy.Kill();
+				auto& scriptedBehaviour = enemy.GetComponent<ScriptedBehaviourComponent>();
+				auto& enemyBehaviour = std::static_pointer_cast<EnemyBehaviour>(scriptedBehaviour.script);
+
+				enemyBehaviour->Defeat();
+
+				//enemy.Kill();
 			}
 
 			projectile.Kill();
@@ -91,7 +97,7 @@ public:
 			if (playerBehaviour->isCatching) {
 				projectile.Kill();
 				App::PlaySound(".\\TestData\\Test.wav");
-				playerBehaviour->endCatch(true);
+				playerBehaviour->EndCatch(true);
 			}
 			else {
 				health.health_val -= projectileComponent.hitDamage;

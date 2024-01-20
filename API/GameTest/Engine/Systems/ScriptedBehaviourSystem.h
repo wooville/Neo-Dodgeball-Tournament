@@ -9,7 +9,7 @@ public:
 		RequireComponent<ScriptedBehaviourComponent>();
 	}
 
-	// Update each script's event subscriptions
+	// Update each script's event subscriptions, defined individually
 	void SubscribeToEvents(std::unique_ptr<EventBus>& eventBus) {
 		for (auto entity : GetSystemEntities()) {
 			auto& scriptedBehaviour = entity.GetComponent<ScriptedBehaviourComponent>();

@@ -50,7 +50,7 @@ public:
 		}
 	}
 
-	void Update(double deltaTime) {
+	void Update(float deltaTime) {
 		for (auto entity : GetSystemEntities()) {
 			//update position based on velocity
 			auto& transform = entity.GetComponent<TransformComponent>();

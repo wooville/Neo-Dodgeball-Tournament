@@ -141,6 +141,9 @@
     <ClInclude Include="Engine\Events\ScoreChangeEvent.h">
       <Filter>Engine\Events</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Scripts\EnemyBehaviour.h">
+      <Filter>Engine\Scripts</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="stb_image">

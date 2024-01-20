@@ -6,7 +6,7 @@
 #include "../Events/PlayerActionEvent.h"
 #include "../Events/CollisionEvent.h"
 #include "../Events/ScoreChangeEvent.h"
-#include "../Components/PlayerAbilitiesComponent.h"
+#include "../Components/HealthComponent.h"
 #include "../Components/TransformComponent.h"
 #include "../Components/RigidBodyComponent.h"
 #include "../Components/TextComponent.h"
@@ -14,6 +14,8 @@
 // timers in ms
 #define HP_COORD_X (100.0f)
 #define HP_COORD_Y (APP_VIRTUAL_HEIGHT - 100.0f)
+#define CATCH_COORD_X (100.0f)
+#define CATCH_COORD_Y (HP_COORD_Y - 50.0f)
 #define CATCH_ACTIVE_TIME (250.0f)
 #define CATCH_COOLDOWN_TIME (2000.0f)
 #define SCORE_CHANGE_CATCH (1)
@@ -76,21 +78,21 @@ public:
 			rigidbody.velocityY = 0.0f;
 		}
 
-		if (canThrow && controller.CheckButton(XINPUT_GAMEPAD_X, true))
+		if (canThrow && controller.CheckButton(XINPUT_GAMEPAD_RIGHT_SHOULDER, true))
 		{
 			eventBus->EmitEvent<PlayerActionEvent>();
 			canThrow = false;
 		}
 
-		if (canCatch && controller.CheckButton(XINPUT_GAMEPAD_A, true))
+		if (canCatch && controller.CheckButton(XINPUT_GAMEPAD_LEFT_SHOULDER, true))
 		{
-			startCatch();
+			StartCatch();
 		}
 
 		if (isCatching) {
 			catchActiveTimer += deltaTime;
 			if (catchActiveTimer > CATCH_ACTIVE_TIME) {
-				endCatch(false);
+				EndCatch(false);
 			}
 		}
 
@@ -116,15 +118,24 @@ public:
 		std::vector<std::pair<std::pair<float, float>, std::string>> textToRender;
 		std::pair<float, float> coords = std::make_pair(HP_COORD_X, HP_COORD_Y);
 		textToRender.emplace_back(coords, std::to_string(healthComponent.health_val));
+
+		coords = std::make_pair(CATCH_COORD_X, CATCH_COORD_Y);
+		if (canCatch) {
+			textToRender.emplace_back(coords, "Can Catch");
+		}
+		else {
+			textToRender.emplace_back(coords, "");
+		}
+
 		textComponent.textToRender = textToRender;
 	}
 
-	void startCatch() {
+	void StartCatch() {
 		canCatch = false;
 		isCatching = true;
 	}
 
-	void endCatch(bool success) {
+	void EndCatch(bool success) {
 		catchActiveTimer = 0.0;
 		isCatching = false;
 

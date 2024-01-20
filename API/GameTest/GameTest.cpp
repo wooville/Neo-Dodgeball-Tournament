@@ -67,16 +67,6 @@ void Init()
 	player.AddComponent<ScriptedBehaviourComponent>(std::make_shared<PlayerBehaviour>());
 	player.Tag("player");	// tags are unique, one entity per tag
 
-	//Entity npc = registry->CreateEntity();
-	//npc.AddComponent<TransformComponent>(600.0f, 600.0f);
-	//npc.AddComponent<SpriteComponent>(".\\TestData\\Test.bmp", 8, 4);
-	//npc.AddComponent<AnimationComponent>();
-	//npc.AddComponent<RigidBodyComponent>();
-	//npc.AddComponent<BoxColliderComponent>(140,140);
-	//npc.AddComponent<HealthComponent>(20);
-	//npc.AddComponent<ProjectileEmitterComponent>(-0.5, 0, 1000);
-	//npc.Group("enemies");	// groups are not unique, multiple entities per group
-
 	Entity pickup = registry->CreateEntity();
 	pickup.AddComponent<TransformComponent>(600.0f, 400.0f);
 	pickup.AddComponent<SpriteComponent>(".\\TestData\\blue_square.bmp", 1, 1, 0);
@@ -164,7 +154,7 @@ void Render()
 	//	float ey = 700 - cosf(a + i * 0.1f)*60.0f;
 	//	g = (float)i / 20.0f;
 	//	b = (float)i / 20.0f;
-	//	App::DrawLine(sx, sy, ex, ey,r,g,b);
+		//App::DrawLine(sx, sy, ex, ey,r,g,b);
 	//}
 
 	// TODO - draw colliders
