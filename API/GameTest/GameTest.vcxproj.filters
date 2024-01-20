@@ -63,9 +63,6 @@
     <ClInclude Include="Engine\Components\BoxColliderComponent.h">
       <Filter>Engine\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Components\CameraFollowComponent.h">
-      <Filter>Engine\Components</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Components\HealthComponent.h">
       <Filter>Engine\Components</Filter>
     </ClInclude>

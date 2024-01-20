@@ -6,6 +6,7 @@
 #include <windows.h> 
 #include <math.h>  
 #include <memory>
+
 //------------------------------------------------------------------------
 #include "app\app.h"
 //------------------------------------------------------------------------
@@ -32,7 +33,6 @@
 //------------------------------------------------------------------------
 std::unique_ptr<Registry> registry;
 std::unique_ptr<EventBus> eventBus;
-//std::unique_ptr<AssetStore> assetStore;
 
 float gameTimer;
 int score;
@@ -42,6 +42,7 @@ int score;
 //------------------------------------------------------------------------
 void Init()
 {
+	srand(static_cast <unsigned> (time(0)));
 	//isRunning = false;
 	//isDebug = false;
 	registry = std::make_unique<Registry>();
@@ -50,32 +51,31 @@ void Init()
 	//Logger::Log("Game constructor called.");
 
 	//------------------------------------------------------------------------
+	Entity gameManager = registry->CreateEntity();
+	gameManager.AddComponent<TextComponent>();
+	gameManager.AddComponent<ScriptedBehaviourComponent>(std::make_shared<GameManagerBehaviour>());
+
 	Entity player = registry->CreateEntity();
 	player.AddComponent<TransformComponent>(400.0f, 400.0f);
 	player.AddComponent<SpriteComponent>(".\\TestData\\red_square.bmp", 1, 1, 1);
 	player.AddComponent<AnimationComponent>();
 	player.AddComponent<RigidBodyComponent>();
 	player.AddComponent<BoxColliderComponent>(32,32);
-	//player.AddComponent<PlayerAbilitiesComponent>();
 	player.AddComponent<HealthComponent>(200);
 	player.AddComponent<ProjectileEmitterComponent>(0.7, 0.7, 0, 1000, 10, true);
-
-	//PlayerBehaviour* playerBehaviour = new PlayerBehaviour();
-	//PlayerBehaviour* playerBehaviour = new PlayerBehaviour();
-	//std::shared_ptr<PlayerBehaviour> playerBehaviour = ;
+	player.AddComponent<TextComponent>();
 	player.AddComponent<ScriptedBehaviourComponent>(std::make_shared<PlayerBehaviour>());
-	//player.GetComponent<SpriteComponent>().simpleSprite->SetScale(5.0f);
 	player.Tag("player");	// tags are unique, one entity per tag
 
-	Entity npc = registry->CreateEntity();
-	npc.AddComponent<TransformComponent>(600.0f, 600.0f);
-	npc.AddComponent<SpriteComponent>(".\\TestData\\Test.bmp", 8, 4);
-	npc.AddComponent<AnimationComponent>();
-	npc.AddComponent<RigidBodyComponent>();
-	npc.AddComponent<BoxColliderComponent>(140,140);
-	npc.AddComponent<HealthComponent>(20);
-	npc.AddComponent<ProjectileEmitterComponent>(-0.5, 0, 1000);
-	npc.Group("enemies");	// groups are not unique, multiple entities per group
+	//Entity npc = registry->CreateEntity();
+	//npc.AddComponent<TransformComponent>(600.0f, 600.0f);
+	//npc.AddComponent<SpriteComponent>(".\\TestData\\Test.bmp", 8, 4);
+	//npc.AddComponent<AnimationComponent>();
+	//npc.AddComponent<RigidBodyComponent>();
+	//npc.AddComponent<BoxColliderComponent>(140,140);
+	//npc.AddComponent<HealthComponent>(20);
+	//npc.AddComponent<ProjectileEmitterComponent>(-0.5, 0, 1000);
+	//npc.Group("enemies");	// groups are not unique, multiple entities per group
 
 	Entity pickup = registry->CreateEntity();
 	pickup.AddComponent<TransformComponent>(600.0f, 400.0f);
@@ -88,15 +88,6 @@ void Init()
 	pickup2.AddComponent<SpriteComponent>(".\\TestData\\blue_square.bmp", 1, 1, 0);
 	pickup2.AddComponent<BoxColliderComponent>(32, 32);
 	pickup2.Group("pickups");
-
-	Entity gameManager = registry->CreateEntity();
-	std::vector<std::pair<std::pair<float, float>, std::string>> textToRender;
-	std::pair<float, float> coords = std::make_pair(300.0, 200.0);
-	textToRender.emplace_back(coords, "test");
-	coords = std::make_pair(500.0, 300.0);
-	textToRender.emplace_back(coords, "test2");
-	gameManager.AddComponent<TextComponent>();
-	gameManager.AddComponent<ScriptedBehaviourComponent>(std::make_shared<GameManagerBehaviour>());
 
 	registry->AddSystem<MovementSystem>();
 	registry->AddSystem<RenderSystem>();
@@ -140,7 +131,7 @@ void Update(float deltaTime)
 	//registry->GetSystem<CameraMovementSystem>().Update(camera);
 	registry->GetSystem<ProjectileEmitSystem>().Update(registry);
 	registry->GetSystem<ProjectileLifecycleSystem>().Update();
-	registry->GetSystem<ScriptedBehaviourSystem>().Update(eventBus, deltaTime);
+	registry->GetSystem<ScriptedBehaviourSystem>().Update(registry, eventBus, deltaTime);
 
 	gameTimer += deltaTime;
 }

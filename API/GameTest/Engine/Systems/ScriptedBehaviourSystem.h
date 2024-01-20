@@ -22,11 +22,11 @@ public:
 		}
 	}
 
-	void Update(std::unique_ptr<EventBus>& eventBus, float deltaTime) {
+	void Update(std::unique_ptr<Registry>& registry, std::unique_ptr<EventBus>& eventBus, float deltaTime) {
 		for (auto entity : GetSystemEntities()) {
 			auto& scriptedBehaviour = entity.GetComponent<ScriptedBehaviourComponent>();
 
-			scriptedBehaviour.script->Update(entity, eventBus, deltaTime);
+			scriptedBehaviour.script->Update(registry, entity, eventBus, deltaTime);
 		}
 	}
 };

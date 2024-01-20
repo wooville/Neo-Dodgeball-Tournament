@@ -184,7 +184,6 @@
     <ClInclude Include="App\SimpleSprite.h" />
     <ClInclude Include="Engine\Components\AnimationComponent.h" />
     <ClInclude Include="Engine\Components\BoxColliderComponent.h" />
-    <ClInclude Include="Engine\Components\CameraFollowComponent.h" />
     <ClInclude Include="Engine\Components\HealthComponent.h" />
     <ClInclude Include="Engine\Components\PlayerAbilitiesComponent.h" />
     <ClInclude Include="Engine\Components\ProjectileComponent.h" />

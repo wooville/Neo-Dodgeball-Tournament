@@ -9,8 +9,11 @@
 #include "../Components/PlayerAbilitiesComponent.h"
 #include "../Components/TransformComponent.h"
 #include "../Components/RigidBodyComponent.h"
+#include "../Components/TextComponent.h"
 
 // timers in ms
+#define HP_COORD_X (100.0f)
+#define HP_COORD_Y (APP_VIRTUAL_HEIGHT - 100.0f)
 #define CATCH_ACTIVE_TIME (250.0f)
 #define CATCH_COOLDOWN_TIME (2000.0f)
 #define SCORE_CHANGE_CATCH (1)
@@ -38,9 +41,10 @@ public:
 		eventBus->SubscribeToEvent<CollisionEvent>(this, &PlayerBehaviour::onCollision);
 	}
 
-	void Update(Entity entity, std::unique_ptr<EventBus>& eventBus, float deltaTime) {
+	void Update(std::unique_ptr<Registry>& registry, Entity entity, std::unique_ptr<EventBus>& eventBus, float deltaTime) {
 		auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
 		auto& controller = App::GetController();
+
 
 		if (controller.GetLeftThumbStickX() > 0.5f || controller.CheckButton(XINPUT_GAMEPAD_DPAD_RIGHT, false))
 		{
@@ -106,7 +110,13 @@ public:
 		{
 			App::PlaySound(".\\TestData\\Test.wav");
 		}
-		
+
+		auto& textComponent = entity.GetComponent<TextComponent>();
+		auto& healthComponent = entity.GetComponent<HealthComponent>();
+		std::vector<std::pair<std::pair<float, float>, std::string>> textToRender;
+		std::pair<float, float> coords = std::make_pair(HP_COORD_X, HP_COORD_Y);
+		textToRender.emplace_back(coords, std::to_string(healthComponent.health_val));
+		textComponent.textToRender = textToRender;
 	}
 
 	void startCatch() {
