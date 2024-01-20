@@ -22,10 +22,13 @@
 //#include "Engine/Systems/CameraMovementSystem.h"
 #include "Engine/Systems/ProjectileEmitSystem.h"
 #include "Engine/Systems/ProjectileLifecycleSystem.h"
-//#include "Engine/Systems/RenderTextSystem.h"
+#include "Engine/Systems/RenderTextSystem.h"
 //#include "Engine/Systems/RenderHealthBarSystem.h"
 //#include "Engine/Systems/RenderGUISystem.h"
 #include "Engine/Systems/ScriptedBehaviourSystem.h"
+
+#include "Engine/Scripts/GameManagerBehaviour.h"
+#include "Engine/Scripts/PlayerBehaviour.h"
 //------------------------------------------------------------------------
 std::unique_ptr<Registry> registry;
 std::unique_ptr<EventBus> eventBus;
@@ -54,13 +57,13 @@ void Init()
 	player.AddComponent<RigidBodyComponent>();
 	player.AddComponent<BoxColliderComponent>(32,32);
 	//player.AddComponent<PlayerAbilitiesComponent>();
-	player.AddComponent<HealthComponent>(20);
+	player.AddComponent<HealthComponent>(200);
 	player.AddComponent<ProjectileEmitterComponent>(0.7, 0.7, 0, 1000, 10, true);
 
 	//PlayerBehaviour* playerBehaviour = new PlayerBehaviour();
 	//PlayerBehaviour* playerBehaviour = new PlayerBehaviour();
-	std::shared_ptr<PlayerBehaviour> playerBehaviour = std::make_shared<PlayerBehaviour>();
-	player.AddComponent<ScriptedBehaviourComponent>(playerBehaviour);
+	//std::shared_ptr<PlayerBehaviour> playerBehaviour = ;
+	player.AddComponent<ScriptedBehaviourComponent>(std::make_shared<PlayerBehaviour>());
 	//player.GetComponent<SpriteComponent>().simpleSprite->SetScale(5.0f);
 	player.Tag("player");	// tags are unique, one entity per tag
 
@@ -76,19 +79,27 @@ void Init()
 
 	Entity pickup = registry->CreateEntity();
 	pickup.AddComponent<TransformComponent>(600.0f, 400.0f);
-	pickup.AddComponent<SpriteComponent>(".\\TestData\\blue_square.bmp", 1, 1, 1);
+	pickup.AddComponent<SpriteComponent>(".\\TestData\\blue_square.bmp", 1, 1, 0);
 	pickup.AddComponent<BoxColliderComponent>(32, 32);
 	pickup.Group("pickups");
 
 	Entity pickup2 = registry->CreateEntity();
 	pickup2.AddComponent<TransformComponent>(800.0f, 400.0f);
-	pickup2.AddComponent<SpriteComponent>(".\\TestData\\blue_square.bmp", 1, 1, 1);
+	pickup2.AddComponent<SpriteComponent>(".\\TestData\\blue_square.bmp", 1, 1, 0);
 	pickup2.AddComponent<BoxColliderComponent>(32, 32);
 	pickup2.Group("pickups");
 
+	Entity gameManager = registry->CreateEntity();
+	std::vector<std::pair<std::pair<float, float>, std::string>> textToRender;
+	std::pair<float, float> coords = std::make_pair(300.0, 200.0);
+	textToRender.emplace_back(coords, "test");
+	coords = std::make_pair(500.0, 300.0);
+	textToRender.emplace_back(coords, "test2");
+	gameManager.AddComponent<TextComponent>();
+	gameManager.AddComponent<ScriptedBehaviourComponent>(std::make_shared<GameManagerBehaviour>());
+
 	registry->AddSystem<MovementSystem>();
 	registry->AddSystem<RenderSystem>();
-	//registry->AddSystem<PlayerAbilitiesSystem>();
 	registry->AddSystem<AnimationSystem>();
 	registry->AddSystem<CollisionSystem>();
 	//registry->AddSystem<RenderColliderSystem>();
@@ -96,7 +107,7 @@ void Init()
 	//registry->AddSystem<CameraMovementSystem>();
 	registry->AddSystem<ProjectileEmitSystem>();
 	registry->AddSystem<ProjectileLifecycleSystem>();
-	//registry->AddSystem<RenderTextSystem>();
+	registry->AddSystem<RenderTextSystem>();
 	//registry->AddSystem<RenderHealthBarSystem>();
 	//registry->AddSystem<RenderGUISystem>();
 	registry->AddSystem<ScriptedBehaviourSystem>();
@@ -141,17 +152,7 @@ void Update(float deltaTime)
 void Render()
 {
 	registry->GetSystem<RenderSystem>().Update();
-
-	//------------------------------------------------------------------------
-	// Example Text.
-	//------------------------------------------------------------------------
-	
-	int seconds = static_cast<int>((gameTimer)/1000);
-	int minutes = static_cast<int>(seconds/60);
-
-	//std::string timeString = minutes + ":" + seconds;
-	App::Print(100, 100, std::to_string(gameTimer).c_str());
-	App::Print(100, 150, std::to_string(score).c_str());
+	registry->GetSystem<RenderTextSystem>().Update();
 
 	App::Print(APP_VIRTUAL_WIDTH - 200, 150, "LT - Aim");
 

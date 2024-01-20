@@ -192,13 +192,16 @@
     <ClInclude Include="Engine\Components\RigidBodyComponent.h" />
     <ClInclude Include="Engine\Components\ScriptedBehaviourComponent.h" />
     <ClInclude Include="Engine\Components\SpriteComponent.h" />
+    <ClInclude Include="Engine\Components\TextComponent.h" />
     <ClInclude Include="Engine\Components\TransformComponent.h" />
     <ClInclude Include="Engine\ECS\ECS.h" />
     <ClInclude Include="Engine\EventBus\Event.h" />
     <ClInclude Include="Engine\EventBus\EventBus.h" />
     <ClInclude Include="Engine\Events\CollisionEvent.h" />
     <ClInclude Include="Engine\Events\PlayerActionEvent.h" />
+    <ClInclude Include="Engine\Events\ScoreChangeEvent.h" />
     <ClInclude Include="Engine\Logger\Logger.h" />
+    <ClInclude Include="Engine\Scripts\GameManagerBehaviour.h" />
     <ClInclude Include="Engine\Scripts\PlayerBehaviour.h" />
     <ClInclude Include="Engine\Systems\AnimationSystem.h" />
     <ClInclude Include="Engine\Systems\CollisionSystem.h" />

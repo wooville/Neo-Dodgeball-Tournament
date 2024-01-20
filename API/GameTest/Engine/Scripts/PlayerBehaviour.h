@@ -5,19 +5,22 @@
 #include "../EventBus/EventBus.h"
 #include "../Events/PlayerActionEvent.h"
 #include "../Events/CollisionEvent.h"
+#include "../Events/ScoreChangeEvent.h"
 #include "../Components/PlayerAbilitiesComponent.h"
 #include "../Components/TransformComponent.h"
 #include "../Components/RigidBodyComponent.h"
 
 // timers in ms
-#define CATCH_ACTIVE_TIME (50000.0f)
+#define CATCH_ACTIVE_TIME (250.0f)
 #define CATCH_COOLDOWN_TIME (2000.0f)
+#define SCORE_CHANGE_CATCH (1)
 
 class PlayerBehaviour : public IScriptedBehaviour {
 private:
 	bool canAim = false;
 	bool canThrow = false;
 	bool canCatch = false;
+	bool caughtBall = false;
 	float catchActiveTimer = 0.0;
 	float catchCooldownTimer = 0.0;
 	float speed = 0.5f;
@@ -87,9 +90,14 @@ public:
 			}
 		}
 
+		if (caughtBall) {
+			eventBus->EmitEvent<ScoreChangeEvent>(SCORE_CHANGE_CATCH);
+			caughtBall = false;
+		}
+
 		if (!canCatch) {
-			catchActiveTimer += deltaTime;
-			if (catchActiveTimer > CATCH_COOLDOWN_TIME) {
+			catchCooldownTimer += deltaTime;
+			if (catchCooldownTimer > CATCH_COOLDOWN_TIME) {
 				canCatch = true;
 			}
 		}
@@ -106,11 +114,13 @@ public:
 		isCatching = true;
 	}
 
-	void endCatch(bool caughtBall) {
+	void endCatch(bool success) {
 		catchActiveTimer = 0.0;
 		isCatching = false;
 
-		if (caughtBall) {
+		if (success) {
+			caughtBall = true;
+			canCatch = true;
 			canThrow = true;
 			catchCooldownTimer = 0.0;
 		}

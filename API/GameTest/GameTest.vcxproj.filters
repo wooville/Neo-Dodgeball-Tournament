@@ -135,6 +135,15 @@
     <ClInclude Include="Engine\Scripts\PlayerBehaviour.h">
       <Filter>Engine\Scripts</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Scripts\GameManagerBehaviour.h">
+      <Filter>Engine\Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Components\TextComponent.h">
+      <Filter>Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Events\ScoreChangeEvent.h">
+      <Filter>Engine\Events</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="stb_image">
