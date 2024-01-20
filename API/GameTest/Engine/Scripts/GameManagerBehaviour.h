@@ -12,11 +12,12 @@
 #define TIMER_COORD_Y (100.0f)
 #define SCORE_COORD_X (100.0f)
 #define SCORE_COORD_Y (150.0f)
-#define ENEMY_SPAWN_INTERVAL (5000)	// ms between each enemy spawn
-#define ENEMY_SPAWN_COORD_X_LOWER (100.0f)
-#define ENEMY_SPAWN_COORD_Y_LOWER (100.0f)
-#define ENEMY_SPAWN_COORD_X_UPPER (APP_VIRTUAL_WIDTH-100.0f)
-#define ENEMY_SPAWN_COORD_Y_UPPER (APP_VIRTUAL_HEIGHT-100.0f)
+#define ENEMY_SPAWN_INTERVAL (30000)	// ms between each enemy spawn
+#define PICKUP_SPAWN_INTERVAL (5000)	// ms between each enemy spawn
+#define SPAWN_COORD_X_LOWER (100.0f)
+#define SPAWN_COORD_Y_LOWER (100.0f)
+#define SPAWN_COORD_X_UPPER (APP_VIRTUAL_WIDTH-100.0f)
+#define SPAWN_COORD_Y_UPPER (APP_VIRTUAL_HEIGHT-100.0f)
 
 class GameManagerBehaviour : public IScriptedBehaviour {
 private:
@@ -24,7 +25,10 @@ private:
 public:
 	float gameTimer = 0.0f;
 	float enemySpawnTimer = ENEMY_SPAWN_INTERVAL;
+	float pickupSpawnTimer = ENEMY_SPAWN_INTERVAL;
 	int score = 0;
+	int currentBalls = 0;
+	int maxBalls = 3;
 
 	GameManagerBehaviour() {}
 
@@ -63,16 +67,16 @@ public:
 	void SpawnEnemy(std::unique_ptr<Registry>& registry){
 		Entity newEnemy = registry->CreateEntity();
 		//std::uniform_int_distribution<std::mt19937::result_type> dist6(100, static_cast<int>(APP_VIRTUAL_WIDTH-100.0));
-		float spawnX = ENEMY_SPAWN_COORD_X_LOWER + static_cast<float>(rand()) / (static_cast <float> (RAND_MAX / (ENEMY_SPAWN_COORD_X_UPPER - ENEMY_SPAWN_COORD_X_LOWER)));
+		float spawnX = SPAWN_COORD_X_LOWER + static_cast<float>(rand()) / (static_cast <float> (RAND_MAX / (SPAWN_COORD_X_UPPER - SPAWN_COORD_X_LOWER)));
 		//dist6(100, static_cast<int>(APP_VIRTUAL_HEIGHT - 100.0));
-		float spawnY = ENEMY_SPAWN_COORD_Y_LOWER + static_cast<float>(rand()) / (static_cast <float> (RAND_MAX / (ENEMY_SPAWN_COORD_Y_UPPER - ENEMY_SPAWN_COORD_Y_LOWER)));
+		float spawnY = SPAWN_COORD_Y_LOWER + static_cast<float>(rand()) / (static_cast <float> (RAND_MAX / (SPAWN_COORD_Y_UPPER - SPAWN_COORD_Y_LOWER)));
 		newEnemy.AddComponent<TransformComponent>(spawnX, spawnY);
-		newEnemy.AddComponent<SpriteComponent>(".\\TestData\\Test.bmp", 8, 4);
+		newEnemy.AddComponent<SpriteComponent>(".\\TestData\\red_square.bmp", 1, 1);
 		newEnemy.AddComponent<AnimationComponent>();
 		newEnemy.AddComponent<RigidBodyComponent>();
-		newEnemy.AddComponent<BoxColliderComponent>(140, 140);
+		newEnemy.AddComponent<BoxColliderComponent>(32, 32);
 		newEnemy.AddComponent<HealthComponent>(20);
-		newEnemy.AddComponent<ProjectileEmitterComponent>(-0.5, 0, 1000);
+		newEnemy.AddComponent<ProjectileEmitterComponent>(0, 0, 2000);
 		newEnemy.AddComponent<ScriptedBehaviourComponent>(std::make_shared<EnemyBehaviour>());
 		newEnemy.Group("enemies");
 	}

@@ -3,7 +3,7 @@
 #include "../App/app.h"
 #include "../ECS/ECS.h"
 #include "../EventBus/EventBus.h"
-#include "../Events/PlayerActionEvent.h"
+#include "../Events/BallThrowEvent.h"
 #include "../Events/CollisionEvent.h"
 #include "../Events/ScoreChangeEvent.h"
 #include "../Components/HealthComponent.h"
@@ -19,6 +19,7 @@
 #define CATCH_ACTIVE_TIME (250.0f)
 #define CATCH_COOLDOWN_TIME (2000.0f)
 #define SCORE_CHANGE_CATCH (1)
+#define MAX_THROW_CHARGE (3000.0f)
 
 class PlayerBehaviour : public IScriptedBehaviour {
 private:
@@ -28,10 +29,15 @@ private:
 	bool caughtBall = false;
 	float catchActiveTimer = 0.0;
 	float catchCooldownTimer = 0.0;
-	float speed = 0.5f;
+	float speed = 0.4f;
 
 public:
+	bool isAiming = false;
 	bool isCatching = false;
+	bool isChargingThrow = false;
+	float throwCharge = 0.0f;
+	float throwDirectionX = 0.0f;
+	float throwDirectionY = 0.0f;
 
 	PlayerBehaviour() {
 		//RequireComponent<PlayerAbilitiesComponent>();
@@ -50,41 +56,95 @@ public:
 
 		if (controller.GetLeftThumbStickX() > 0.5f || controller.CheckButton(XINPUT_GAMEPAD_DPAD_RIGHT, false))
 		{
-			rigidbody.velocityX = speed;
+			if (isAiming) {
+				throwDirectionX = 1;
+				rigidbody.velocityX = 0.0f;
+			}
+			else {
+				rigidbody.velocityX = speed;
+			}
 			//testSprite->SetAnimation(ANIM_RIGHT);
 		}
 		else if (controller.GetLeftThumbStickX() < -0.5f || controller.CheckButton(XINPUT_GAMEPAD_DPAD_LEFT, false))
 		{
-			rigidbody.velocityX = -speed;
+			if (isAiming) {
+				throwDirectionX = -1;
+				rigidbody.velocityX = 0.0f;
+			}
+			else {
+				rigidbody.velocityX = -speed;
+			}
 			//testSprite->SetAnimation(ANIM_LEFT);
 		}
 		else
 		{
+			throwDirectionX = 0.0f;
 			rigidbody.velocityX = 0.0f;
 		}
 
 		if (controller.GetLeftThumbStickY() > 0.5f || controller.CheckButton(XINPUT_GAMEPAD_DPAD_UP, false))
 		{
-			rigidbody.velocityY = speed;
+			if (isAiming) {
+				throwDirectionY = 1;
+				rigidbody.velocityY = 0.0f;
+			}
+			else {
+				rigidbody.velocityY = speed;
+			}
 			//testSprite->SetAnimation(ANIM_FORWARDS);
 		}
 		else if (controller.GetLeftThumbStickY() < -0.5f || controller.CheckButton(XINPUT_GAMEPAD_DPAD_DOWN, false))
 		{
-			rigidbody.velocityY = -speed;
+			if (isAiming) {
+				throwDirectionY = -1;
+				rigidbody.velocityY = 0.0f;
+			}
+			else {
+				rigidbody.velocityY = -speed;
+			}
 			//testSprite->SetAnimation(ANIM_BACKWARDS);
 		}
 		else
 		{
+			throwDirectionY = 0.0f;
 			rigidbody.velocityY = 0.0f;
 		}
 
-		if (canThrow && controller.CheckButton(XINPUT_GAMEPAD_RIGHT_SHOULDER, true))
+		//if (canThrow && controller.CheckButton(XINPUT_GAMEPAD_RIGHT_SHOULDER, true))
+		//{
+		//	eventBus->EmitEvent<PlayerActionEvent>();
+		//	canThrow = false;
+		//}
+
+		// start aiming if can throw and holding LT, stop aiming with LT release
+		if (canThrow && !isAiming && controller.GetLeftTrigger() > 0.2f)
 		{
-			eventBus->EmitEvent<PlayerActionEvent>();
-			canThrow = false;
+			// can't catch while aiming
+			StartAiming();
+		}
+		else if (isAiming && controller.GetLeftTrigger() < 0.2f) {
+			// cancel any charging throws
+			StopAiming();
+		}
+		
+		// start charging throw if aiming and holding RT
+		if (isAiming && controller.GetRightTrigger() > 0.2f) {
+			StartChargingThrow();
 		}
 
-		if (canCatch && controller.CheckButton(XINPUT_GAMEPAD_LEFT_SHOULDER, true))
+		// release RT while charging to throw
+		if (isAiming && isChargingThrow && controller.GetRightTrigger() < 0.2f) {
+			ReleaseChargingThrow(eventBus, entity);
+		}
+
+		if (isChargingThrow) {
+			throwCharge += deltaTime;
+			if (throwCharge > MAX_THROW_CHARGE) {
+				throwCharge = MAX_THROW_CHARGE;
+			}
+		}
+
+		if (canCatch && controller.GetRightTrigger() > 0.2f)
 		{
 			StartCatch();
 		}
@@ -126,8 +186,36 @@ public:
 		else {
 			textToRender.emplace_back(coords, "");
 		}
+		/*if (canThrow) {
+			textToRender.emplace_back(coords, "Can Throw");
+		}
+		else {
+			textToRender.emplace_back(coords, "");
+		}*/
 
 		textComponent.textToRender = textToRender;
+	}
+
+	void StartAiming() {
+		isAiming = true;
+		canCatch = false;
+	}
+
+	void StopAiming() {
+		isAiming = false;
+		canCatch = true;
+		isChargingThrow = false;
+		throwCharge = 0.0f;
+	}
+
+	void StartChargingThrow() {
+		isChargingThrow = true;
+	}
+
+	void ReleaseChargingThrow(std::unique_ptr<EventBus>& eventBus, Entity thrower) {
+		isChargingThrow = false;
+		canThrow = false;
+		eventBus->EmitEvent<BallThrowEvent>(thrower, throwDirectionX, throwDirectionY, throwCharge);
 	}
 
 	void StartCatch() {

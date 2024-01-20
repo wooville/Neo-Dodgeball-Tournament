@@ -99,7 +99,8 @@ public:
 				App::PlaySound(".\\TestData\\Test.wav");
 				playerBehaviour->EndCatch(true);
 			}
-			else {
+			else
+			{
 				health.health_val -= projectileComponent.hitDamage;
 			}
 

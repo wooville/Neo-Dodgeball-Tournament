@@ -99,9 +99,6 @@
     <ClInclude Include="Engine\Systems\RenderSystem.h">
       <Filter>Engine\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Systems\PlayerAbilitiesSystem.h">
-      <Filter>Engine\Systems</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Components\PlayerAbilitiesComponent.h">
       <Filter>Engine\Components</Filter>
     </ClInclude>
@@ -120,7 +117,7 @@
     <ClInclude Include="Engine\Systems\ProjectileLifecycleSystem.h">
       <Filter>Engine\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Events\PlayerActionEvent.h">
+    <ClInclude Include="Engine\Events\BallThrowEvent.h">
       <Filter>Engine\Events</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Systems\ScriptedBehaviourSystem.h">

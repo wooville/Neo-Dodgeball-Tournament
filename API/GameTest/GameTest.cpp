@@ -54,10 +54,11 @@ void Init()
 	Entity gameManager = registry->CreateEntity();
 	gameManager.AddComponent<TextComponent>();
 	gameManager.AddComponent<ScriptedBehaviourComponent>(std::make_shared<GameManagerBehaviour>());
+	gameManager.Tag("manager");
 
 	Entity player = registry->CreateEntity();
 	player.AddComponent<TransformComponent>(400.0f, 400.0f);
-	player.AddComponent<SpriteComponent>(".\\TestData\\red_square.bmp", 1, 1, 1);
+	player.AddComponent<SpriteComponent>(".\\TestData\\blue_square.bmp", 1, 1, 1);
 	player.AddComponent<AnimationComponent>();
 	player.AddComponent<RigidBodyComponent>();
 	player.AddComponent<BoxColliderComponent>(32,32);
@@ -69,13 +70,13 @@ void Init()
 
 	Entity pickup = registry->CreateEntity();
 	pickup.AddComponent<TransformComponent>(600.0f, 400.0f);
-	pickup.AddComponent<SpriteComponent>(".\\TestData\\blue_square.bmp", 1, 1, 0);
+	pickup.AddComponent<SpriteComponent>(".\\TestData\\green_square.bmp", 1, 1, 0);
 	pickup.AddComponent<BoxColliderComponent>(32, 32);
 	pickup.Group("pickups");
 
 	Entity pickup2 = registry->CreateEntity();
 	pickup2.AddComponent<TransformComponent>(800.0f, 400.0f);
-	pickup2.AddComponent<SpriteComponent>(".\\TestData\\blue_square.bmp", 1, 1, 0);
+	pickup2.AddComponent<SpriteComponent>(".\\TestData\\green_square.bmp", 1, 1, 0);
 	pickup2.AddComponent<BoxColliderComponent>(32, 32);
 	pickup2.Group("pickups");
 
@@ -132,10 +133,10 @@ void Update(float deltaTime)
 //------------------------------------------------------------------------
 void Render()
 {
-	registry->GetSystem<RenderSystem>().Update();
+	registry->GetSystem<RenderSystem>().Update(registry);
 	registry->GetSystem<RenderTextSystem>().Update();
 
-	App::Print(APP_VIRTUAL_WIDTH - 200, 150, "LT - Aim");
+	//App::Print(APP_VIRTUAL_WIDTH - 200, 150, "LT - Aim");
 
 	//------------------------------------------------------------------------
 	// Example Line Drawing.

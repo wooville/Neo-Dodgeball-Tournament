@@ -3,7 +3,12 @@
 #include "../ECS/ECS.h"
 #include "../Components/TransformComponent.h"
 #include "../Components/SpriteComponent.h"
+#include "../Components/ScriptedBehaviourComponent.h"
+#include "../Scripts/EnemyBehaviour.h"
+#include "../Scripts/PlayerBehaviour.h"
 #include <algorithm>
+
+#define AIM_LINE_SCALE_FACTOR (200.0f)
 
 class RenderSystem : public System {
 public:
@@ -12,7 +17,7 @@ public:
 		RequireComponent<SpriteComponent>();
 	}
 
-	void Update() {
+	void Update(std::unique_ptr<Registry>& registry) {
 		// organize into struct that couples transform and sprite components
 		struct RenderableEntity {
 			TransformComponent transformComponent;
@@ -29,6 +34,34 @@ public:
 
 				// update CSimpleSprite positions to match transforms when rendering
 				renderableEntity.spriteComponent.simpleSprite->SetPosition(renderableEntity.transformComponent.x, renderableEntity.transformComponent.y);
+
+				// render lines first at this stage underneath all sprites
+				if (entity.BelongsToGroup("enemies") && entity.HasComponent<ScriptedBehaviourComponent>()) {
+					auto& scriptedBehaviour = entity.GetComponent<ScriptedBehaviourComponent>();
+					auto& enemyBehaviour = std::static_pointer_cast<EnemyBehaviour>(scriptedBehaviour.script);
+					Entity player = registry->GetEntityByTag("player");
+					auto& playerTransform = player.GetComponent<TransformComponent>();
+
+					//if (enemyBehaviour->isAiming) {
+						float aimLineEndPosX = renderableEntity.transformComponent.x + enemyBehaviour->dx*AIM_LINE_SCALE_FACTOR;
+						float aimLineEndPosY = renderableEntity.transformComponent.y + enemyBehaviour->dy*AIM_LINE_SCALE_FACTOR;
+
+						App::DrawLine(renderableEntity.transformComponent.x, renderableEntity.transformComponent.y, aimLineEndPosX, aimLineEndPosY, 1.0, 0.0, 0.0);
+					//}
+				}
+
+				if (entity.HasTag("player") && entity.HasComponent<ScriptedBehaviourComponent>()) {
+					auto& scriptedBehaviour = entity.GetComponent<ScriptedBehaviourComponent>();
+					auto& playerBehaviour = std::static_pointer_cast<PlayerBehaviour>(scriptedBehaviour.script);
+
+					if (playerBehaviour->isAiming) {
+						float aimLineEndPosX = renderableEntity.transformComponent.x + playerBehaviour->throwDirectionX * AIM_LINE_SCALE_FACTOR;
+						float aimLineEndPosY = renderableEntity.transformComponent.y + playerBehaviour->throwDirectionY * AIM_LINE_SCALE_FACTOR;
+
+						App::DrawLine(renderableEntity.transformComponent.x, renderableEntity.transformComponent.y, aimLineEndPosX, aimLineEndPosY, 1.0, 0.0, 0.0);
+					}
+				}
+				
 
 				//// don't bother rendering entities outside of camera
 				//bool isEntityOutsideCameraView = (

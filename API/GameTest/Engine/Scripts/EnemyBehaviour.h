@@ -3,7 +3,7 @@
 #include "../App/app.h"
 #include "../ECS/ECS.h"
 #include "../EventBus/EventBus.h"
-#include "../Events/PlayerActionEvent.h"
+#include "../Events/BallThrowEvent.h"
 #include "../Events/CollisionEvent.h"
 #include "../Events/ScoreChangeEvent.h"
 #include "../Components/HealthComponent.h"
@@ -23,7 +23,10 @@ private:
 	float projectileSpeed = 0.5f;
 
 public:
+	bool isAiming = false;
 	bool isCatching = false;
+	float dx = 0.0f;
+	float dy = 0.0f;
 
 	EnemyBehaviour() {
 		//RequireComponent<PlayerAbilitiesComponent>();
@@ -49,8 +52,8 @@ public:
 		auto& playerTransform = registry->GetEntityByTag("player").GetComponent<TransformComponent>();
 
 		// aim at player position
-		float dx = playerTransform.x - transform.x;
-		float dy = playerTransform.y - transform.y;
+		dx = playerTransform.x - transform.x;
+		dy = playerTransform.y - transform.y;
 		float dist = sqrtf(dx*dx+dy*dy);
 		dx /= dist;
 		dy /= dist;
