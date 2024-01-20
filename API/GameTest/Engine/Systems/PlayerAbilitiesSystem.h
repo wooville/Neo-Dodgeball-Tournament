@@ -4,10 +4,13 @@
 #include "../EventBus/EventBus.h"
 #include "../Events/PlayerActionEvent.h"
 #include "../Events/CollisionEvent.h"
-//#include "../Events/PickupEvent.h"
 #include "../Components/PlayerAbilitiesComponent.h"
 #include "../Components/TransformComponent.h"
 #include "../Components/RigidBodyComponent.h"
+
+// timers in ms
+#define CATCH_ACTIVE_TIME (500.0f);
+#define CATCH_COOLDOWN_TIME (2000.0f);
 
 class PlayerAbilitiesSystem : public System {
 public:
@@ -23,9 +26,14 @@ public:
 		//eventBus->SubscribeToEvent<PickupEvent>(this, &PlayerAbilitiesSystem::onPickup);
 	}
 
+	bool canAim = false;
 	bool canThrow = false;
+	bool canCatch = false;
+	bool isCatching = false;
+	float catchActiveTimer = 0.0;
+	float catchCooldownTimer = 0.0;
 
-	void Update(std::unique_ptr<EventBus>& eventBus) {
+	void Update(std::unique_ptr<EventBus>& eventBus, float deltaTime) {
 		for (auto entity : GetSystemEntities()) {
 			auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
 			auto& controller = App::GetController();
@@ -43,7 +51,8 @@ public:
 				rigidbody.velocityX = -speed;
 				//testSprite->SetAnimation(ANIM_LEFT);
 			}
-			else {
+			else
+			{
 				rigidbody.velocityX = 0.0f;
 			}
 
@@ -57,7 +66,8 @@ public:
 				rigidbody.velocityY = -speed;
 				//testSprite->SetAnimation(ANIM_BACKWARDS);
 			}
-			else {
+			else
+			{
 				rigidbody.velocityY = 0.0f;
 			}
 
@@ -67,11 +77,34 @@ public:
 				canThrow = false;
 			}
 
+			if (canCatch && controller.CheckButton(XINPUT_GAMEPAD_A, true))
+			{
+				startCatch();
+			}
+
+			if (isCatching) {
+				catchActiveTimer += deltaTime;
+				if (catchActiveTimer > CATCH_ACTIVE_TIME) {
+					catchActiveTimer = 0;
+					isCatching = false;
+				}
+			}
+
 			if (controller.CheckButton(XINPUT_GAMEPAD_B, true))
 			{
 				App::PlaySound(".\\TestData\\Test.wav");
 			}
 		}
+	}
+
+	void startCatch() {
+		canCatch = false;
+		isCatching = true;
+	}
+
+	void endCatch() {
+		canCatch = true;
+		isCatching = false;
 	}
 
 	void onCollision(CollisionEvent& event) {

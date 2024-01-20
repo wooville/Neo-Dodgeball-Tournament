@@ -17,7 +17,7 @@
 #include "Engine/Systems/CollisionSystem.h"
 //#include "Engine/Systems/RenderColliderSystem.h"
 #include "Engine/Systems/DamageSystem.h"
-#include "Engine/Systems/PlayerAbilitiesSystem.h"
+//#include "Engine/Systems/PlayerAbilitiesSystem.h"
 //#include "Engine/Systems/KeyboardControlSystem.h"
 //#include "Engine/Systems/CameraMovementSystem.h"
 #include "Engine/Systems/ProjectileEmitSystem.h"
@@ -25,7 +25,7 @@
 //#include "Engine/Systems/RenderTextSystem.h"
 //#include "Engine/Systems/RenderHealthBarSystem.h"
 //#include "Engine/Systems/RenderGUISystem.h"
-//#include "Engine/Systems/ScriptSystem.h"
+#include "Engine/Systems/ScriptedBehaviourSystem.h"
 //------------------------------------------------------------------------
 std::unique_ptr<Registry> registry;
 std::unique_ptr<EventBus> eventBus;
@@ -46,15 +46,6 @@ void Init()
 	eventBus = std::make_unique<EventBus>();
 	//Logger::Log("Game constructor called.");
 
-	//-----------------------------------------
-	//testSprite = App::CreateSprite(".\\TestData\\Test.bmp", 8, 4);
-	//testSprite->SetPosition(400.0f, 400.0f);
-	//float speed = 1.0f / 15.0f;
-	//testSprite->CreateAnimation(ANIM_BACKWARDS, speed, { 0,1,2,3,4,5,6,7 });
-	//testSprite->CreateAnimation(ANIM_LEFT, speed, { 8,9,10,11,12,13,14,15 });
-	//testSprite->CreateAnimation(ANIM_RIGHT, speed, { 16,17,18,19,20,21,22,23 });
-	//testSprite->CreateAnimation(ANIM_FORWARDS, speed, { 24,25,26,27,28,29,30,31 });
-	//testSprite->SetScale(1.0f);
 	//------------------------------------------------------------------------
 	Entity player = registry->CreateEntity();
 	player.AddComponent<TransformComponent>(400.0f, 400.0f);
@@ -62,9 +53,14 @@ void Init()
 	player.AddComponent<AnimationComponent>();
 	player.AddComponent<RigidBodyComponent>();
 	player.AddComponent<BoxColliderComponent>(32,32);
-	player.AddComponent<PlayerAbilitiesComponent>();
+	//player.AddComponent<PlayerAbilitiesComponent>();
 	player.AddComponent<HealthComponent>(20);
-	player.AddComponent<ProjectileEmitterComponent>(0.7, 0.7);
+	player.AddComponent<ProjectileEmitterComponent>(0.7, 0.7, 0, 1000, 10, true);
+
+	//PlayerBehaviour* playerBehaviour = new PlayerBehaviour();
+	//PlayerBehaviour* playerBehaviour = new PlayerBehaviour();
+	std::shared_ptr<PlayerBehaviour> playerBehaviour = std::make_shared<PlayerBehaviour>();
+	player.AddComponent<ScriptedBehaviourComponent>(playerBehaviour);
 	//player.GetComponent<SpriteComponent>().simpleSprite->SetScale(5.0f);
 	player.Tag("player");	// tags are unique, one entity per tag
 
@@ -84,9 +80,15 @@ void Init()
 	pickup.AddComponent<BoxColliderComponent>(32, 32);
 	pickup.Group("pickups");
 
+	Entity pickup2 = registry->CreateEntity();
+	pickup2.AddComponent<TransformComponent>(800.0f, 400.0f);
+	pickup2.AddComponent<SpriteComponent>(".\\TestData\\blue_square.bmp", 1, 1, 1);
+	pickup2.AddComponent<BoxColliderComponent>(32, 32);
+	pickup2.Group("pickups");
+
 	registry->AddSystem<MovementSystem>();
 	registry->AddSystem<RenderSystem>();
-	registry->AddSystem<PlayerAbilitiesSystem>();
+	//registry->AddSystem<PlayerAbilitiesSystem>();
 	registry->AddSystem<AnimationSystem>();
 	registry->AddSystem<CollisionSystem>();
 	//registry->AddSystem<RenderColliderSystem>();
@@ -97,7 +99,7 @@ void Init()
 	//registry->AddSystem<RenderTextSystem>();
 	//registry->AddSystem<RenderHealthBarSystem>();
 	//registry->AddSystem<RenderGUISystem>();
-	//registry->AddSystem<ScriptSystem>();
+	registry->AddSystem<ScriptedBehaviourSystem>();
 
 	gameTimer = 0.0;
 	score = 0;
@@ -109,50 +111,25 @@ void Init()
 //------------------------------------------------------------------------
 void Update(float deltaTime)
 {
-	//------------------------------------------------------------------------
-	// Example Sprite Code....
-	//testSprite->Update(deltaTime);
-	
-	//if (App::GetController().CheckButton(XINPUT_GAMEPAD_DPAD_UP, false))
-	//{
-	//	testSprite->SetScale(testSprite->GetScale() + 0.1f);
-	//}
-	//if (App::GetController().CheckButton(XINPUT_GAMEPAD_DPAD_DOWN, false))
-	//{
-	//	testSprite->SetScale(testSprite->GetScale() - 0.1f);
-	//}
-	//if (App::GetController().CheckButton(XINPUT_GAMEPAD_DPAD_LEFT, false))
-	//{
-	//	testSprite->SetAngle(testSprite->GetAngle() + 0.1f);
-	//}
-	//if (App::GetController().CheckButton(XINPUT_GAMEPAD_DPAD_RIGHT, false))
-	//{
-	//	testSprite->SetAngle(testSprite->GetAngle() - 0.1f);
-	//}
-	//if (App::GetController().CheckButton(XINPUT_GAMEPAD_A, true))
-	//{
-	//	testSprite->SetAnimation(-1);
-	//}
-
 	eventBus->Reset();
 
 	// subscribe to events for all systems for current frame
 	registry->GetSystem<DamageSystem>().SubscribeToEvents(eventBus);
 	registry->GetSystem<ProjectileEmitSystem>().SubscribeToEvents(eventBus);
-	registry->GetSystem<PlayerAbilitiesSystem>().SubscribeToEvents(eventBus);
+	registry->GetSystem<ScriptedBehaviourSystem>().SubscribeToEvents(eventBus);
 
 	// update registry to process entities
 	registry->Update();
 
 	// invoke systems that need to update
-	registry->GetSystem<PlayerAbilitiesSystem>().Update(eventBus);
+	//registry->GetSystem<PlayerAbilitiesSystem>().Update(eventBus, deltaTime);
 	registry->GetSystem<MovementSystem>().Update(deltaTime);
 	registry->GetSystem<AnimationSystem>().Update(deltaTime);
 	registry->GetSystem<CollisionSystem>().Update(eventBus);
 	//registry->GetSystem<CameraMovementSystem>().Update(camera);
 	registry->GetSystem<ProjectileEmitSystem>().Update(registry);
 	registry->GetSystem<ProjectileLifecycleSystem>().Update();
-	//registry->GetSystem<ScriptSystem>().Update(deltaTime, SDL_GetTicks());
+	registry->GetSystem<ScriptedBehaviourSystem>().Update(eventBus, deltaTime);
 
 	gameTimer += deltaTime;
 }
@@ -174,7 +151,9 @@ void Render()
 
 	//std::string timeString = minutes + ":" + seconds;
 	App::Print(100, 100, std::to_string(gameTimer).c_str());
-	App::Print(100, 200, std::to_string(score).c_str());
+	App::Print(100, 150, std::to_string(score).c_str());
+
+	App::Print(APP_VIRTUAL_WIDTH - 200, 150, "LT - Aim");
 
 	//------------------------------------------------------------------------
 	// Example Line Drawing.

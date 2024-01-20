@@ -1,5 +1,6 @@
 #pragma once
 #include "../Logger/Logger.h"
+#include "../EventBus/EventBus.h"
 
 #include <bitset>
 #include <vector>
@@ -94,6 +95,21 @@ public:
 
 	// defines which kinds of components entities must have to be considered by system
 	template <typename TComponent> void RequireComponent();
+};
+
+///////////////////////////////////////////////////
+// IScriptedBehaviour
+///////////////////////////////////////////////////
+// Interface to represent all scripts to be used with ScriptedBehaviourSystem
+///////////////////////////////////////////////////
+
+class IScriptedBehaviour {
+public:
+	//ScriptedBehaviour() = default;
+	virtual ~IScriptedBehaviour() {};
+
+	virtual void SubscribeToEvents(std::unique_ptr<EventBus>& eventBus) = 0;
+	virtual void Update(Entity entity, std::unique_ptr<EventBus>& eventBus, float deltaTime) = 0;
 };
 
 ///////////////////////////////////////////////////

@@ -126,6 +126,15 @@
     <ClInclude Include="Engine\Events\PlayerActionEvent.h">
       <Filter>Engine\Events</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Systems\ScriptedBehaviourSystem.h">
+      <Filter>Engine\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Components\ScriptedBehaviourComponent.h">
+      <Filter>Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Scripts\PlayerBehaviour.h">
+      <Filter>Engine\Scripts</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="stb_image">
@@ -157,6 +166,9 @@
     </Filter>
     <Filter Include="Engine\Systems">
       <UniqueIdentifier>{09eed572-0112-412e-a94d-07f637f917b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Scripts">
+      <UniqueIdentifier>{251575f7-ddcf-4a9b-a21d-5bf77b91ed82}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

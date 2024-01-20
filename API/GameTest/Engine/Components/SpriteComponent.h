@@ -6,8 +6,8 @@
 struct SpriteComponent {
 	CSimpleSprite *simpleSprite;
 	std::string assetId;
-	int width;
-	int height;
+	float width;
+	float height;
 	int zIndex;
 
 	SpriteComponent(std::string assetId = "", int columns = 1, int rows = 1, int zIndex = 0) {
