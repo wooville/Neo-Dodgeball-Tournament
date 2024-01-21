@@ -109,7 +109,7 @@ public:
 	virtual ~IScriptedBehaviour() {};
 
 	virtual void SubscribeToEvents(std::unique_ptr<EventBus>& eventBus) = 0;
-	virtual void Update(std::unique_ptr<Registry>& registry, Entity entity, std::unique_ptr<EventBus>& eventBus, float deltaTime) = 0;
+	virtual void Update(Entity entity, std::unique_ptr<EventBus>& eventBus, float deltaTime) = 0;
 };
 
 ///////////////////////////////////////////////////

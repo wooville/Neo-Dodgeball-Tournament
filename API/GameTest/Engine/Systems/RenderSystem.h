@@ -42,12 +42,12 @@ public:
 					Entity player = registry->GetEntityByTag("player");
 					auto& playerTransform = player.GetComponent<TransformComponent>();
 
-					//if (enemyBehaviour->isAiming) {
-						float aimLineEndPosX = renderableEntity.transformComponent.x + enemyBehaviour->dx*AIM_LINE_SCALE_FACTOR;
-						float aimLineEndPosY = renderableEntity.transformComponent.y + enemyBehaviour->dy*AIM_LINE_SCALE_FACTOR;
+					if (enemyBehaviour->currentState == STATE::AIM) {
+						float aimLineEndPosX = renderableEntity.transformComponent.x + enemyBehaviour->dxPlayer * (enemyBehaviour->aimTimer / 4.0f);
+						float aimLineEndPosY = renderableEntity.transformComponent.y + enemyBehaviour->dyPlayer * (enemyBehaviour->aimTimer / 4.0f);
 
 						App::DrawLine(renderableEntity.transformComponent.x, renderableEntity.transformComponent.y, aimLineEndPosX, aimLineEndPosY, 1.0, 0.0, 0.0);
-					//}
+					}
 				}
 
 				if (entity.HasTag("player") && entity.HasComponent<ScriptedBehaviourComponent>()) {
@@ -55,8 +55,8 @@ public:
 					auto& playerBehaviour = std::static_pointer_cast<PlayerBehaviour>(scriptedBehaviour.script);
 
 					if (playerBehaviour->isAiming) {
-						float aimLineEndPosX = renderableEntity.transformComponent.x + playerBehaviour->throwDirectionX * AIM_LINE_SCALE_FACTOR;
-						float aimLineEndPosY = renderableEntity.transformComponent.y + playerBehaviour->throwDirectionY * AIM_LINE_SCALE_FACTOR;
+						float aimLineEndPosX = renderableEntity.transformComponent.x + playerBehaviour->throwDirectionX * (playerBehaviour->throwCharge/4.0f);
+						float aimLineEndPosY = renderableEntity.transformComponent.y + playerBehaviour->throwDirectionY * (playerBehaviour->throwCharge/4.0f);
 
 						App::DrawLine(renderableEntity.transformComponent.x, renderableEntity.transformComponent.y, aimLineEndPosX, aimLineEndPosY, 1.0, 0.0, 0.0);
 					}
@@ -86,32 +86,8 @@ public:
 
 		// render entities
 		for (auto entity : renderableEntities) {
-			// update position based on velocity
-			const auto& transform = entity.transformComponent;
 			const auto& sprite = entity.spriteComponent;
 			sprite.simpleSprite->Draw();
-
-			//// rectangle to carve out of original sprite texture
-			//SDL_Rect srcRect = sprite.srcRect;
-
-			//// where to draw entity on map
-			//SDL_Rect dstRect = {
-			//	static_cast<int>(transform.position.x - (sprite.isFixed ? 0 : camera.x)),
-			//	static_cast<int>(transform.position.y - (sprite.isFixed ? 0 : camera.y)),
-			//	static_cast<int>(sprite.width * transform.scale.x),
-			//	static_cast<int>(sprite.height * transform.scale.y)
-			//};
-
-			//SDL_RenderCopyEx(
-			//	renderer,
-			//	assetStore->GetTexture(sprite.assetId),
-			//	&srcRect,
-			//	&dstRect,
-			//	transform.rotation,
-			//	NULL,
-			//	sprite.flip
-			//);
-
 		}
 	}
 };

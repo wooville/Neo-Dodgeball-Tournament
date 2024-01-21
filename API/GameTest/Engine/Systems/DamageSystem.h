@@ -25,12 +25,19 @@ public:
 		Entity a = event.a;
 		Entity b = event.b;
 
-		//if (a.BelongsToGroup("enemies") && b.HasTag("player")) {
-		//	onEnemyPlayerCollision(a, b);
-		//}
-		//if (b.BelongsToGroup("enemies") && a.HasTag("player")) {
-		//	onEnemyPlayerCollision(b, a);
-		//}
+		if (a.BelongsToGroup("projectiles") && b.BelongsToGroup("walls")) {
+			onProjectileWallCollision(a, b);
+		}
+		if (b.BelongsToGroup("projectiles") && a.BelongsToGroup("walls")) {
+			onProjectileWallCollision(b, a);
+		}
+
+		if (a.BelongsToGroup("pickups")) {
+			onPickupCollision(a, b);
+		}
+		if (b.BelongsToGroup("pickups")) {
+			onPickupCollision(b, a);
+		}
 		
 		if (a.BelongsToGroup("projectiles") && b.HasTag("player")) {
 			onProjectilePlayerCollision(a, b);
@@ -47,21 +54,27 @@ public:
 		}
 	}
 
+	void onProjectileWallCollision(Entity projectile, Entity wall) {
+		auto& transform = projectile.GetComponent<TransformComponent>();
+		auto& rigidbody = projectile.GetComponent<RigidBodyComponent>();
 
+		// bounce off of wall
+		if (wall.BelongsToGroup("reverseX")) {
+			rigidbody.velocityX *= -1;
+		}
+		else if (wall.BelongsToGroup("reverseY")) {
+			rigidbody.velocityY *= -1;
+		}
 
-	//void onEnemyPlayerCollision(Entity enemy, Entity player) {
-	//	//auto projectileComponent = enemy.GetComponent<ProjectileComponent>();
-
-	//	
-	//	auto& health = enemy.GetComponent<HealthComponent>();
-
-	//	health.health_val -= 10;
-
-	//	if (health.health_val <= 0) {
-	//		enemy.Kill();
-	//	}
-	//	// TODO timer
-	//}
+		// spawn pickup to replace projectile
+		/*Entity newPickup = projectile.registry->CreateEntity();
+		newPickup.AddComponent<TransformComponent>(transform.x, transform.y);
+		newPickup.AddComponent<SpriteComponent>(".\\TestData\\green_square.bmp", 1, 1, 0);
+		newPickup.AddComponent<BoxColliderComponent>(32, 32);
+		newPickup.Group("pickups");
+		projectile.Kill();*/
+		
+	}
 
 	void onProjectileEnemyCollision(Entity projectile, Entity enemy) {
 		auto projectileComponent = projectile.GetComponent<ProjectileComponent>();
@@ -69,8 +82,17 @@ public:
 		// update health, check health for kill condition, kill projectile entity
 		if (projectileComponent.isFriendly) {
 			auto& health = enemy.GetComponent<HealthComponent>();
+			auto& scriptedBehaviour = enemy.GetComponent<ScriptedBehaviourComponent>();
+			auto& enemyBehaviour = std::static_pointer_cast<EnemyBehaviour>(scriptedBehaviour.script);
 
-			health.health_val -= projectileComponent.hitDamage;
+			if (enemyBehaviour->currentState == STATE::CATCH) {
+				App::PlaySound(".\\TestData\\Test.wav");
+				enemyBehaviour->EndCatch(true);
+			}
+			else
+			{
+				health.health_val -= projectileComponent.hitDamage;
+			}
 
 			if (health.health_val <= 0) {
 				auto& scriptedBehaviour = enemy.GetComponent<ScriptedBehaviourComponent>();
@@ -95,7 +117,6 @@ public:
 			auto& playerBehaviour = std::static_pointer_cast<PlayerBehaviour>(scriptedBehaviour.script);
 
 			if (playerBehaviour->isCatching) {
-				projectile.Kill();
 				App::PlaySound(".\\TestData\\Test.wav");
 				playerBehaviour->EndCatch(true);
 			}
@@ -109,6 +130,19 @@ public:
 			}
 
 			projectile.Kill();
+		}
+	}
+
+	void onPickupCollision(Entity pickup, Entity entity) {
+		if (entity.HasTag("player") && entity.HasComponent<ScriptedBehaviourComponent>()) {
+			auto& scriptedBehaviour = entity.GetComponent<ScriptedBehaviourComponent>();
+			auto& playerBehaviour = std::static_pointer_cast<PlayerBehaviour>(scriptedBehaviour.script);
+			playerBehaviour->Pickup(pickup);
+		}
+		else if (entity.BelongsToGroup("enemies") && entity.HasComponent<ScriptedBehaviourComponent>()) {
+			auto& scriptedBehaviour = entity.GetComponent<ScriptedBehaviourComponent>();
+			auto& enemyBehaviour = std::static_pointer_cast<EnemyBehaviour>(scriptedBehaviour.script);
+			enemyBehaviour->Pickup(pickup);
 		}
 	}
 

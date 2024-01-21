@@ -36,6 +36,10 @@ public:
 		//	projectilePositionY += (transform.scale * sprite.height / 2);
 		//}
 
+		// set initial velocity based on charge time
+		projectileEmitter.velocityX = event.throwCharge / 1000.0;
+		projectileEmitter.velocityY = event.throwCharge / 1000.0;
+
 		// adjust direction based on where thrower was aiming
 		float projectileVelocityX = projectileEmitter.velocityX * event.throwDirectionX;
 		float projectileVelocityY = projectileEmitter.velocityY * event.throwDirectionY;
@@ -43,11 +47,11 @@ public:
 		Entity projectile = entity.registry->CreateEntity();
 		projectile.Group("projectiles");
 		projectile.AddComponent<TransformComponent>(projectilePositionX, projectilePositionY);
-		projectile.AddComponent<RigidBodyComponent>(projectileVelocityX, projectileVelocityY);
+		projectile.AddComponent<RigidBodyComponent>(projectileVelocityX, projectileVelocityY, 0.97f);
 		projectile.AddComponent<SpriteComponent>(".\\TestData\\projectile.bmp", 1, 1, 1);
 		projectile.AddComponent<BoxColliderComponent>(32, 32);
 		projectile.AddComponent<ProjectileComponent>(projectileEmitter.isFriendly, projectileEmitter.hitDamage, projectileEmitter.projectileDuration);
-		//}
+		
 	}
 
 	void Update(std::unique_ptr<Registry>& registry) {

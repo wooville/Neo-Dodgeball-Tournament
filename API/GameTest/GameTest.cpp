@@ -63,22 +63,35 @@ void Init()
 	player.AddComponent<RigidBodyComponent>();
 	player.AddComponent<BoxColliderComponent>(32,32);
 	player.AddComponent<HealthComponent>(200);
-	player.AddComponent<ProjectileEmitterComponent>(0.7, 0.7, 0, 1000, 10, true);
+	player.AddComponent<ProjectileEmitterComponent>(0.7, 0.7, 0, 3000, 10, true);
 	player.AddComponent<TextComponent>();
 	player.AddComponent<ScriptedBehaviourComponent>(std::make_shared<PlayerBehaviour>());
 	player.Tag("player");	// tags are unique, one entity per tag
 
-	Entity pickup = registry->CreateEntity();
-	pickup.AddComponent<TransformComponent>(600.0f, 400.0f);
-	pickup.AddComponent<SpriteComponent>(".\\TestData\\green_square.bmp", 1, 1, 0);
-	pickup.AddComponent<BoxColliderComponent>(32, 32);
-	pickup.Group("pickups");
+	// boundaries for ball collision
+	Entity wallTop = registry->CreateEntity();
+	wallTop.AddComponent<TransformComponent>(0.0f, APP_VIRTUAL_HEIGHT-2);
+	wallTop.AddComponent<BoxColliderComponent>(APP_VIRTUAL_WIDTH, 2);
+	wallTop.Group("walls");
+	wallTop.Group("reverseY");
 
-	Entity pickup2 = registry->CreateEntity();
-	pickup2.AddComponent<TransformComponent>(800.0f, 400.0f);
-	pickup2.AddComponent<SpriteComponent>(".\\TestData\\green_square.bmp", 1, 1, 0);
-	pickup2.AddComponent<BoxColliderComponent>(32, 32);
-	pickup2.Group("pickups");
+	Entity wallRight = registry->CreateEntity();
+	wallRight.AddComponent<TransformComponent>(APP_VIRTUAL_WIDTH-2, 0.0f);
+	wallRight.AddComponent<BoxColliderComponent>(2, APP_VIRTUAL_HEIGHT);
+	wallRight.Group("walls");
+	wallRight.Group("reverseX");
+
+	Entity wallBottom = registry->CreateEntity();
+	wallBottom.AddComponent<TransformComponent>(0.0f, 0.0f);
+	wallBottom.AddComponent<BoxColliderComponent>(APP_VIRTUAL_WIDTH, 32);
+	wallBottom.Group("walls");
+	wallBottom.Group("reverseY");
+
+	Entity wallLeft = registry->CreateEntity();
+	wallLeft.AddComponent<TransformComponent>(0.0f, 0.0f);
+	wallLeft.AddComponent<BoxColliderComponent>(32, APP_VIRTUAL_HEIGHT);
+	wallLeft.Group("walls");
+	wallLeft.Group("reverseX");
 
 	registry->AddSystem<MovementSystem>();
 	registry->AddSystem<RenderSystem>();
@@ -122,7 +135,7 @@ void Update(float deltaTime)
 	//registry->GetSystem<CameraMovementSystem>().Update(camera);
 	registry->GetSystem<ProjectileEmitSystem>().Update(registry);
 	registry->GetSystem<ProjectileLifecycleSystem>().Update();
-	registry->GetSystem<ScriptedBehaviourSystem>().Update(registry, eventBus, deltaTime);
+	registry->GetSystem<ScriptedBehaviourSystem>().Update(eventBus, deltaTime);
 
 	gameTimer += deltaTime;
 }

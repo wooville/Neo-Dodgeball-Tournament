@@ -10,23 +10,42 @@
 #include "../Components/TransformComponent.h"
 #include "../Components/RigidBodyComponent.h"
 #include "../Components/ProjectileEmitterComponent.h"
+#include <queue>
+
+#define AIM_TIME (1000.0f)
+#define AIM_DISTANCE (300.0f)
+#define CATCH_ACTIVE_TIME (2000.0f)
+#define CATCH_CHARGE_TIME (10000.0f)
+#define CHECK_PICKUP_INTERVAL (1000.0f)
+
+enum STATE {
+	EVADE,
+	PURSUE,
+	PICKUP,
+	CATCH,
+	AIM
+};
 
 class EnemyBehaviour : public IScriptedBehaviour {
 private:
-	bool canAim = false;
 	bool canThrow = false;
 	bool canCatch = false;
 	bool defeated = false;
+	bool patrolFlip = (rand() % 2); // decide if this enemy circles aroudn the player clockwise or counterclockwise
 	float catchActiveTimer = 0.0;
-	float catchCooldownTimer = 0.0;
-	float speed = 0.5f;
+	float catchChargeTimer = 0.0;
+	float speed = 0.4f;
 	float projectileSpeed = 0.5f;
+	float checkPickupTimer = 0.0f;
+	float dxPickup = 0.0f;
+	float dyPickup = 0.0f;
 
 public:
-	bool isAiming = false;
-	bool isCatching = false;
-	float dx = 0.0f;
-	float dy = 0.0f;
+	float dxPlayer = 0.0f;
+	float dyPlayer = 0.0f;
+	float distanceToPlayer = 0.0f;
+	float aimTimer = 0.0f;
+	STATE currentState = STATE::EVADE;
 
 	EnemyBehaviour() {
 		//RequireComponent<PlayerAbilitiesComponent>();
@@ -38,41 +57,180 @@ public:
 		//eventBus->SubscribeToEvent<CollisionEvent>(this, &EnemyBehaviour::onCollision);
 	}
 
-	void Update(std::unique_ptr<Registry>& registry, Entity entity, std::unique_ptr<EventBus>& eventBus, float deltaTime) {
+	void Update(Entity entity, std::unique_ptr<EventBus>& eventBus, float deltaTime) {
 		if (defeated) {
 			defeated = false;
 			eventBus->EmitEvent<ScoreChangeEvent>(10);
 			entity.Kill();
 		}
 
+		if (!canCatch && currentState != STATE::CATCH) {
+			catchChargeTimer += deltaTime;
+			if (catchChargeTimer > CATCH_CHARGE_TIME) {
+				canCatch = true;
+				catchChargeTimer = 0.0f;
+			}
+		}
+
 		auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
 		auto& projectileEmitter = entity.GetComponent<ProjectileEmitterComponent>();
 		
 		auto& transform = entity.GetComponent<TransformComponent>();
-		auto& playerTransform = registry->GetEntityByTag("player").GetComponent<TransformComponent>();
+		auto& playerTransform = entity.registry->GetEntityByTag("player").GetComponent<TransformComponent>();
 
-		// aim at player position
-		dx = playerTransform.x - transform.x;
-		dy = playerTransform.y - transform.y;
-		float dist = sqrtf(dx*dx+dy*dy);
-		dx /= dist;
-		dy /= dist;
-		projectileEmitter.velocityX = dx*projectileSpeed;
-		projectileEmitter.velocityY = dy*projectileSpeed;
+		// direction towards player
+		dxPlayer = playerTransform.x - transform.x;
+		dyPlayer = playerTransform.y - transform.y;
+		distanceToPlayer = sqrtf(dxPlayer * dxPlayer + dyPlayer * dyPlayer);
+		dxPlayer /= distanceToPlayer;
+		dyPlayer /= distanceToPlayer;
+		//projectileEmitter.velocityX = dx * projectileSpeed;
+		//projectileEmitter.velocityY = dy * projectileSpeed;
+
+		std::vector<Entity> pickups = entity.registry->GetEntitiesByGroup("pickups");
+		/*auto cmp = [transform](std::vector<float> p1, std::vector<float> p2) { return (sqrt(pow(transform.x - p1[0], 2) + pow(transform.y - p1[1], 2)) / 2) < (sqrt(transform.x - pow(p2[0], 2) + pow(transform.y - p2[1], 2)) / 2); };
+		std::priority_queue<std::vector<float>, std::vector<std::vector<float>>, decltype(cmp)> q(cmp);
+
+
+		for (Entity p : pickups) {
+			auto& transform = p.GetComponent<TransformComponent>();
+			q.push({transform.x, transform.y});
+		}
+		if (q.size() > 0) {
+			float dx = q.top()[0] - transform.x;
+			float dy = q.top()[1] - transform.y;
+			distanceToPlayer = sqrtf(dx * dx + dy * dy);
+			dxPickup = dx/distanceToPlayer;
+			dyPickup = dy/distanceToPlayer;
+		}
+		else {
+			dxPickup = 0.0f;
+			dyPickup = 0.0f;
+		}*/
+
+		float minDistance = INFINITY;
+		for (Entity p : pickups) {
+			auto& pTransform = p.GetComponent<TransformComponent>();
+			float dx = pTransform.x - transform.x;
+			float dy = pTransform.y - transform.y;
+			float distanceToPickup = sqrtf(dx * dx + dy * dy);
+
+			if (distanceToPickup < minDistance) {
+				minDistance = distanceToPickup;
+				dxPickup = dx/distanceToPickup;
+				dyPickup = dy/distanceToPickup;
+			}
+		}
+		
+		if (canThrow) {
+			if (distanceToPlayer < AIM_DISTANCE) {
+				currentState = STATE::AIM;
+			}
+			else if (currentState != STATE::AIM) {
+				currentState = STATE::PURSUE;
+			}
+		}
+		else if (pickups.size() > 0) {
+			currentState = STATE::PICKUP;
+		}
+		else if (canCatch) {
+			currentState = STATE::CATCH;
+		}
+		else {
+			currentState = STATE::EVADE;
+		}
+
+		switch (currentState) {
+		case EVADE:
+			// move out to a safer distance
+			if (distanceToPlayer < AIM_DISTANCE) {
+				rigidbody.velocityX = -1 * dxPlayer * speed;
+				rigidbody.velocityY = -1 * dyPlayer * speed;
+			}
+			else {	// circle the player at distance
+				rigidbody.velocityX = (patrolFlip) ? -dyPlayer * speed : dyPlayer * speed;
+				rigidbody.velocityY = (patrolFlip) ? dxPlayer * speed : -dxPlayer * speed;
+			}
+
+			// move away from edges
+			if (transform.x > APP_VIRTUAL_WIDTH - 16.0f) {
+				rigidbody.velocityX = -speed;
+			}
+			else if (transform.x <  16.0f) {
+				rigidbody.velocityX = speed;
+			}
+
+			if (transform.y > APP_VIRTUAL_HEIGHT - 16.0f) {
+				rigidbody.velocityY = -speed;
+			}
+			else if (transform.y < 16.0f) {
+				rigidbody.velocityY = speed;
+			}
+			break;
+		case PURSUE:
+			if (distanceToPlayer > AIM_DISTANCE) {
+				rigidbody.velocityX = dxPlayer * speed;
+				rigidbody.velocityY = dyPlayer * speed;
+			}
+			break;
+		case PICKUP:
+			// head towards nearest pickup
+			if (dxPickup != 0.0f && dyPickup != 0.0f) {
+				rigidbody.velocityX = dxPickup * speed;
+				rigidbody.velocityY = dyPickup * speed;
+			}
+			/*else {
+				currentState = STATE::EVADE;
+			}*/
+			break;
+		case CATCH:
+			rigidbody.velocityX = 0.0f;
+			rigidbody.velocityY = 0.0f;
+
+			catchActiveTimer += deltaTime;
+			if (catchActiveTimer > CATCH_ACTIVE_TIME) {
+				EndCatch(false);
+			}
+			break;
+		case AIM:
+			rigidbody.velocityX = 0.0f;
+			rigidbody.velocityY = 0.0f;
+
+			// stored between state changes until it ticks over
+			aimTimer += deltaTime*1.4;
+			if (aimTimer > AIM_TIME - distanceToPlayer/4) {
+				ReleaseChargingThrow(eventBus, entity);
+			}
+			break;
+		default:
+			break;
+		}
+		
+	}
+
+	void EndCatch(bool success) {
+		canCatch = false;
+		catchActiveTimer = 0.0;
+
+		if (success) {
+			canThrow = true;
+		}
+	}
+
+	void ReleaseChargingThrow(std::unique_ptr<EventBus>& eventBus, Entity thrower) {
+		eventBus->EmitEvent<BallThrowEvent>(thrower, dxPlayer, dyPlayer, aimTimer);
+		aimTimer = 0.0f;
+		canThrow = false;
 	}
 
 	void Defeat() {
 		defeated = true;
 	}
 
-	//void onCollision(CollisionEvent& event) {
-	//	Entity a = event.b;
-	//	Entity b = event.b;
-	//	if (a.BelongsToGroup("pickups")) {
-	//		onPickup(a);
-	//	}
-	//	if (b.BelongsToGroup("pickups")) {
-	//		onPickup(b);
-	//	}
-	//}
+	void Pickup(Entity pickup) {
+		if (!canThrow) {
+			canThrow = true;
+			pickup.Kill();
+		}
+	}
 };

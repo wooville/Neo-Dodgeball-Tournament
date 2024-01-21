@@ -12,18 +12,19 @@
 #include "../Components/TextComponent.h"
 
 // timers in ms
-#define HP_COORD_X (100.0f)
+#define HP_COORD_X (50.0f)
 #define HP_COORD_Y (APP_VIRTUAL_HEIGHT - 100.0f)
-#define CATCH_COORD_X (100.0f)
+#define CATCH_COORD_X (HP_COORD_X)
 #define CATCH_COORD_Y (HP_COORD_Y - 50.0f)
+#define CONTROLS_ANCHOR_COORD_X (50.0f)
+#define CONTROLS_ANCHOR_COORD_Y (50.0f)
 #define CATCH_ACTIVE_TIME (250.0f)
 #define CATCH_COOLDOWN_TIME (2000.0f)
 #define SCORE_CHANGE_CATCH (1)
-#define MAX_THROW_CHARGE (3000.0f)
+#define MAX_THROW_CHARGE (2000.0f)
 
 class PlayerBehaviour : public IScriptedBehaviour {
 private:
-	bool canAim = false;
 	bool canThrow = false;
 	bool canCatch = false;
 	bool caughtBall = false;
@@ -46,69 +47,56 @@ public:
 	}
 
 	void SubscribeToEvents(std::unique_ptr<EventBus>& eventBus) {
-		eventBus->SubscribeToEvent<CollisionEvent>(this, &PlayerBehaviour::onCollision);
+		//eventBus->SubscribeToEvent<CollisionEvent>(this, &PlayerBehaviour::onCollision);
 	}
 
-	void Update(std::unique_ptr<Registry>& registry, Entity entity, std::unique_ptr<EventBus>& eventBus, float deltaTime) {
+	void Update(Entity entity, std::unique_ptr<EventBus>& eventBus, float deltaTime) {
 		auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
 		auto& controller = App::GetController();
 
+		if (isAiming) {
+			// normalize left thumbstick for aim direction
+			throwDirectionX = controller.GetLeftThumbStickX();
+			throwDirectionY = controller.GetLeftThumbStickY();
+			float mag = sqrtf(throwDirectionX * throwDirectionX + throwDirectionY * throwDirectionY);
+			throwDirectionX /= mag;
+			throwDirectionY /= mag;
 
-		if (controller.GetLeftThumbStickX() > 0.5f || controller.CheckButton(XINPUT_GAMEPAD_DPAD_RIGHT, false))
-		{
-			if (isAiming) {
-				throwDirectionX = 1;
-				rigidbody.velocityX = 0.0f;
-			}
-			else {
-				rigidbody.velocityX = speed;
-			}
-			//testSprite->SetAnimation(ANIM_RIGHT);
-		}
-		else if (controller.GetLeftThumbStickX() < -0.5f || controller.CheckButton(XINPUT_GAMEPAD_DPAD_LEFT, false))
-		{
-			if (isAiming) {
-				throwDirectionX = -1;
-				rigidbody.velocityX = 0.0f;
-			}
-			else {
-				rigidbody.velocityX = -speed;
-			}
-			//testSprite->SetAnimation(ANIM_LEFT);
-		}
-		else
-		{
-			throwDirectionX = 0.0f;
 			rigidbody.velocityX = 0.0f;
-		}
-
-		if (controller.GetLeftThumbStickY() > 0.5f || controller.CheckButton(XINPUT_GAMEPAD_DPAD_UP, false))
-		{
-			if (isAiming) {
-				throwDirectionY = 1;
-				rigidbody.velocityY = 0.0f;
-			}
-			else {
-				rigidbody.velocityY = speed;
-			}
-			//testSprite->SetAnimation(ANIM_FORWARDS);
-		}
-		else if (controller.GetLeftThumbStickY() < -0.5f || controller.CheckButton(XINPUT_GAMEPAD_DPAD_DOWN, false))
-		{
-			if (isAiming) {
-				throwDirectionY = -1;
-				rigidbody.velocityY = 0.0f;
-			}
-			else {
-				rigidbody.velocityY = -speed;
-			}
-			//testSprite->SetAnimation(ANIM_BACKWARDS);
-		}
-		else
-		{
-			throwDirectionY = 0.0f;
 			rigidbody.velocityY = 0.0f;
 		}
+		else {
+			if (controller.GetLeftThumbStickX() > 0.5f || controller.CheckButton(XINPUT_GAMEPAD_DPAD_RIGHT, false))
+			{
+				rigidbody.velocityX = speed;
+				//testSprite->SetAnimation(ANIM_RIGHT);
+			}
+			else if (controller.GetLeftThumbStickX() < -0.5f || controller.CheckButton(XINPUT_GAMEPAD_DPAD_LEFT, false))
+			{
+				rigidbody.velocityX = -speed;
+				//testSprite->SetAnimation(ANIM_LEFT);
+			}
+			else
+			{
+				rigidbody.velocityX = 0.0f;
+			}
+
+			if (controller.GetLeftThumbStickY() > 0.5f || controller.CheckButton(XINPUT_GAMEPAD_DPAD_UP, false))
+			{
+				rigidbody.velocityY = speed;
+				//testSprite->SetAnimation(ANIM_FORWARDS);
+			}
+			else if (controller.GetLeftThumbStickY() < -0.5f || controller.CheckButton(XINPUT_GAMEPAD_DPAD_DOWN, false))
+			{
+				rigidbody.velocityY = -speed;
+				//testSprite->SetAnimation(ANIM_BACKWARDS);
+			}
+			else
+			{
+				rigidbody.velocityY = 0.0f;
+			}
+		}
+		
 
 		//if (canThrow && controller.CheckButton(XINPUT_GAMEPAD_RIGHT_SHOULDER, true))
 		//{
@@ -138,7 +126,7 @@ public:
 		}
 
 		if (isChargingThrow) {
-			throwCharge += deltaTime;
+			throwCharge += deltaTime*1.3f;
 			if (throwCharge > MAX_THROW_CHARGE) {
 				throwCharge = MAX_THROW_CHARGE;
 			}
@@ -186,12 +174,33 @@ public:
 		else {
 			textToRender.emplace_back(coords, "");
 		}
-		/*if (canThrow) {
-			textToRender.emplace_back(coords, "Can Throw");
+
+		coords = std::make_pair(CONTROLS_ANCHOR_COORD_X, CONTROLS_ANCHOR_COORD_Y);
+		if (!isAiming) {
+			textToRender.emplace_back(coords, "LS - MOVE");
 		}
 		else {
-			textToRender.emplace_back(coords, "");
-		}*/
+			textToRender.emplace_back(coords, "LS - AIM");
+		}
+
+		coords = std::make_pair(CONTROLS_ANCHOR_COORD_X, CONTROLS_ANCHOR_COORD_Y + 50.0f);
+		if (!isAiming) {
+			textToRender.emplace_back(coords, "LT - AIM MODE");
+		}
+		else {
+			textToRender.emplace_back(coords, "LT RELEASE - CANCEL");
+		}
+
+		coords = std::make_pair(CONTROLS_ANCHOR_COORD_X, CONTROLS_ANCHOR_COORD_Y + 100.0f);
+		if (!isAiming) {
+			textToRender.emplace_back(coords, "RT - CATCH");
+		}
+		else if (!isChargingThrow) {
+			textToRender.emplace_back(coords, "RT - CHARGE THROW");
+		}
+		else {
+			textToRender.emplace_back(coords, "RT RELEASE - THROW");
+		}
 
 		textComponent.textToRender = textToRender;
 	}
@@ -216,6 +225,7 @@ public:
 		isChargingThrow = false;
 		canThrow = false;
 		eventBus->EmitEvent<BallThrowEvent>(thrower, throwDirectionX, throwDirectionY, throwCharge);
+		StopAiming();
 	}
 
 	void StartCatch() {
@@ -235,18 +245,7 @@ public:
 		}
 	}
 
-	void onCollision(CollisionEvent& event) {
-		Entity a = event.b;
-		Entity b = event.b;
-		if (a.BelongsToGroup("pickups")) {
-			onPickup(a);
-		}
-		if (b.BelongsToGroup("pickups")) {
-			onPickup(b);
-		}
-	}
-
-	void onPickup(Entity pickup) {
+	void Pickup(Entity pickup) {
 		if (!canThrow) {
 			canThrow = true;
 			pickup.Kill();

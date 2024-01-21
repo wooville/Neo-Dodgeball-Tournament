@@ -58,12 +58,23 @@ public:
 
 			transform.x += rigidbody.velocityX*deltaTime;
 			transform.y += rigidbody.velocityY*deltaTime;
+				
+			// simulate simple acceleration
+			rigidbody.velocityX *= rigidbody.acceleration;
+			rigidbody.velocityY *= rigidbody.acceleration;
+			float vX = rigidbody.velocityX;
+			float vY = rigidbody.velocityY;
+			float mag = sqrtf(vX * vX + vY * vY);
+			if (mag < 0.01) {
+				rigidbody.velocityX = 0;
+				rigidbody.velocityY = 0;
+			}
 
-			if (entity.HasTag("player")) {
-				int paddingTop = 8;
-				int paddingRight = 8;
-				int paddingDown = 8;
-				int paddingLeft = 8;
+			if (entity.HasTag("player") || entity.BelongsToGroup("enemies")) {
+				int paddingTop = 16;
+				int paddingRight = 16;
+				int paddingDown = 16;
+				int paddingLeft = 16;
 				transform.x = transform.x < paddingLeft ? paddingLeft : transform.x;
 				transform.x = transform.x > APP_VIRTUAL_WIDTH - paddingRight ? APP_VIRTUAL_WIDTH - paddingRight : transform.x;
 				transform.y = transform.y < paddingLeft ? paddingLeft : transform.y;
