@@ -6,6 +6,7 @@
 #include "../Components/ScriptedBehaviourComponent.h"
 #include "../Scripts/EnemyBehaviour.h"
 #include "../Scripts/PlayerBehaviour.h"
+#include "../Scripts/GameManagerBehaviour.h"
 #include <algorithm>
 
 #define AIM_LINE_SCALE_FACTOR (200.0f)
@@ -19,6 +20,14 @@ public:
 
 	void Update(std::unique_ptr<Registry>& registry) {
 		// organize into struct that couples transform and sprite components
+		Entity gameManager = registry->GetEntityByTag("manager");
+		auto& scriptedBehaviour = gameManager.GetComponent<ScriptedBehaviourComponent>();
+		auto& gameManagerBehaviour = std::static_pointer_cast<GameManagerBehaviour>(scriptedBehaviour.script);
+
+		// don't render if game over
+		/*if (gameManagerBehaviour->) {
+
+		}*/
 		struct RenderableEntity {
 			TransformComponent transformComponent;
 			SpriteComponent spriteComponent;
@@ -61,19 +70,6 @@ public:
 						App::DrawLine(renderableEntity.transformComponent.x, renderableEntity.transformComponent.y, aimLineEndPosX, aimLineEndPosY, 1.0, 0.0, 0.0);
 					}
 				}
-				
-
-				//// don't bother rendering entities outside of camera
-				//bool isEntityOutsideCameraView = (
-				//	renderableEntity.transformComponent.position.x + (renderableEntity.transformComponent.scale.x * renderableEntity.spriteComponent.width) < camera.x ||
-				//	renderableEntity.transformComponent.position.x  > camera.x + camera.w ||
-				//	renderableEntity.transformComponent.position.y + (renderableEntity.transformComponent.scale.y * renderableEntity.spriteComponent.height) < camera.y ||
-				//	renderableEntity.transformComponent.position.y > camera.y + camera.h
-				//);
-
-				/*if (isEntityOutsideCameraView && !renderableEntity.spriteComponent.isFixed) {
-					continue;
-				}*/
 
 				renderableEntities.emplace_back(renderableEntity);
 			}

@@ -6,17 +6,18 @@
 #include "../Events/BallThrowEvent.h"
 #include "../Events/CollisionEvent.h"
 #include "../Events/ScoreChangeEvent.h"
+#include "../Events/ImportantEntityDiedEvent.h"
 #include "../Components/HealthComponent.h"
 #include "../Components/TransformComponent.h"
 #include "../Components/RigidBodyComponent.h"
 #include "../Components/ProjectileEmitterComponent.h"
-#include <queue>
 
 #define AIM_TIME (1000.0f)
 #define AIM_DISTANCE (300.0f)
-#define CATCH_ACTIVE_TIME (2000.0f)
+#define CATCH_ACTIVE_TIME (3000.0f)
 #define CATCH_CHARGE_TIME (10000.0f)
 #define CHECK_PICKUP_INTERVAL (1000.0f)
+#define DAMAGE_IMMUNITY_TIMER (1000.0f)
 
 enum STATE {
 	EVADE,
@@ -28,10 +29,7 @@ enum STATE {
 
 class EnemyBehaviour : public IScriptedBehaviour {
 private:
-	bool canThrow = false;
 	bool canCatch = false;
-	bool defeated = false;
-	bool patrolFlip = (rand() % 2); // decide if this enemy circles aroudn the player clockwise or counterclockwise
 	float catchActiveTimer = 0.0;
 	float catchChargeTimer = 0.0;
 	float speed = 0.4f;
@@ -39,8 +37,12 @@ private:
 	float checkPickupTimer = 0.0f;
 	float dxPickup = 0.0f;
 	float dyPickup = 0.0f;
+	float immunityTimer = 0.0f;
 
 public:
+	bool patrolFlip = (rand() % 2); // decide if this enemy circles around the player clockwise or counterclockwise
+	bool canThrow = false;
+	bool canTakeDamage = true;
 	float dxPlayer = 0.0f;
 	float dyPlayer = 0.0f;
 	float distanceToPlayer = 0.0f;
@@ -58,10 +60,21 @@ public:
 	}
 
 	void Update(Entity entity, std::unique_ptr<EventBus>& eventBus, float deltaTime) {
-		if (defeated) {
-			defeated = false;
-			eventBus->EmitEvent<ScoreChangeEvent>(10);
+		auto& health = entity.GetComponent<HealthComponent>();
+		auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
+		auto& projectileEmitter = entity.GetComponent<ProjectileEmitterComponent>();
+
+		if (health.health_val <= 0.0f) {
+			eventBus->EmitEvent<ImportantEntityDiedEvent>(entity);
 			entity.Kill();
+		}
+
+		if (!canTakeDamage) {
+			immunityTimer += deltaTime;
+			if (immunityTimer > DAMAGE_IMMUNITY_TIMER) {
+				canTakeDamage = true;
+				immunityTimer = 0.0f;
+			}
 		}
 
 		if (!canCatch && currentState != STATE::CATCH) {
@@ -71,9 +84,6 @@ public:
 				catchChargeTimer = 0.0f;
 			}
 		}
-
-		auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
-		auto& projectileEmitter = entity.GetComponent<ProjectileEmitterComponent>();
 		
 		auto& transform = entity.GetComponent<TransformComponent>();
 		auto& playerTransform = entity.registry->GetEntityByTag("player").GetComponent<TransformComponent>();
@@ -87,27 +97,10 @@ public:
 		//projectileEmitter.velocityX = dx * projectileSpeed;
 		//projectileEmitter.velocityY = dy * projectileSpeed;
 
+		//bool pickupsAvailable = entity.registry->GetNumberOfEntitiesInGroup("pickups") > 0;
 		std::vector<Entity> pickups = entity.registry->GetEntitiesByGroup("pickups");
-		/*auto cmp = [transform](std::vector<float> p1, std::vector<float> p2) { return (sqrt(pow(transform.x - p1[0], 2) + pow(transform.y - p1[1], 2)) / 2) < (sqrt(transform.x - pow(p2[0], 2) + pow(transform.y - p2[1], 2)) / 2); };
-		std::priority_queue<std::vector<float>, std::vector<std::vector<float>>, decltype(cmp)> q(cmp);
 
-
-		for (Entity p : pickups) {
-			auto& transform = p.GetComponent<TransformComponent>();
-			q.push({transform.x, transform.y});
-		}
-		if (q.size() > 0) {
-			float dx = q.top()[0] - transform.x;
-			float dy = q.top()[1] - transform.y;
-			distanceToPlayer = sqrtf(dx * dx + dy * dy);
-			dxPickup = dx/distanceToPlayer;
-			dyPickup = dy/distanceToPlayer;
-		}
-		else {
-			dxPickup = 0.0f;
-			dyPickup = 0.0f;
-		}*/
-
+		// find closest pickup if any exist
 		float minDistance = INFINITY;
 		for (Entity p : pickups) {
 			auto& pTransform = p.GetComponent<TransformComponent>();
@@ -117,11 +110,11 @@ public:
 
 			if (distanceToPickup < minDistance) {
 				minDistance = distanceToPickup;
-				dxPickup = dx/distanceToPickup;
-				dyPickup = dy/distanceToPickup;
+				dxPickup = dx / distanceToPickup;
+				dyPickup = dy / distanceToPickup;
 			}
 		}
-		
+
 		if (canThrow) {
 			if (distanceToPlayer < AIM_DISTANCE) {
 				currentState = STATE::AIM;
@@ -130,7 +123,7 @@ public:
 				currentState = STATE::PURSUE;
 			}
 		}
-		else if (pickups.size() > 0) {
+		else if (pickups.size()) {
 			currentState = STATE::PICKUP;
 		}
 		else if (canCatch) {
@@ -179,9 +172,6 @@ public:
 				rigidbody.velocityX = dxPickup * speed;
 				rigidbody.velocityY = dyPickup * speed;
 			}
-			/*else {
-				currentState = STATE::EVADE;
-			}*/
 			break;
 		case CATCH:
 			rigidbody.velocityX = 0.0f;
@@ -197,7 +187,7 @@ public:
 			rigidbody.velocityY = 0.0f;
 
 			// stored between state changes until it ticks over
-			aimTimer += deltaTime*1.4;
+			aimTimer += deltaTime*1.8;
 			if (aimTimer > AIM_TIME - distanceToPlayer/4) {
 				ReleaseChargingThrow(eventBus, entity);
 			}
@@ -206,6 +196,13 @@ public:
 			break;
 		}
 		
+	}
+
+	void TakeDamage(int damage) {
+		if (canTakeDamage) {
+			canTakeDamage = false;
+			immunityTimer = 0.0f;
+		}
 	}
 
 	void EndCatch(bool success) {
@@ -221,10 +218,6 @@ public:
 		eventBus->EmitEvent<BallThrowEvent>(thrower, dxPlayer, dyPlayer, aimTimer);
 		aimTimer = 0.0f;
 		canThrow = false;
-	}
-
-	void Defeat() {
-		defeated = true;
 	}
 
 	void Pickup(Entity pickup) {

@@ -154,12 +154,15 @@ public:
 
 	void Clear() {
 		data.clear();
+		entityIdToIndex.clear();
+		indexToEntityId.clear();
 		size = 0;
 	}
 
-	void Add(T object) {
+	/*void Add(T object) {
 		data.push_back(object);
-	}
+		size++;
+	}*/
 
 	void Set(int entityId, T object) {
 		if (entityIdToIndex.find(entityId) != entityIdToIndex.end()) {
@@ -184,6 +187,7 @@ public:
 	}
 
 	void Remove(int entityId) {
+		//if (size > 0) {
 		// copy last element to deleted position for contiguity
 		int indexOfRemoved = entityIdToIndex[entityId];
 		int indexOfLast = size - 1;
@@ -198,6 +202,11 @@ public:
 		indexToEntityId.erase(indexOfLast);
 
 		size--;
+		//}
+		//else {
+		//	Clear();
+		//}
+		
 	}
 
 	void RemoveEntityFromPool(int entityId) override {
@@ -273,7 +282,7 @@ public:
 	template <typename TComponent> bool HasComponent(Entity entity) const;
 	template <typename TComponent> TComponent& GetComponent(Entity entity) const;
 
-	//system management
+	// system management
 	template <typename TSystem, typename ...TArgs> void AddSystem(TArgs&& ...args);
 	template <typename TSystem> void RemoveSystem();
 	template <typename TSystem> bool HasSystem() const;
@@ -292,6 +301,7 @@ public:
 	void GroupEntity(Entity entity, const std::string& group);
 	bool EntityBelongsToGroup(Entity entity, const std::string& group) const;
 	std::vector<Entity> GetEntitiesByGroup(const std::string& group) const;
+	int GetNumberOfEntitiesInGroup(const std::string& group) const;
 	void RemoveEntityGroup(Entity entity);
 	
 };

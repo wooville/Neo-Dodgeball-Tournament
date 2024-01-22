@@ -6,7 +6,9 @@
 #include <windows.h> 
 #include <math.h>  
 #include <memory>
-
+#include <fstream>
+#include <sstream>
+#include <string>
 //------------------------------------------------------------------------
 #include "app\app.h"
 //------------------------------------------------------------------------
@@ -31,11 +33,32 @@
 #include "Engine/Scripts/GameManagerBehaviour.h"
 #include "Engine/Scripts/PlayerBehaviour.h"
 //------------------------------------------------------------------------
+#define ROUNDS_FILE_PATH (".\\Data\\rounds.txt")
+
 std::unique_ptr<Registry> registry;
 std::unique_ptr<EventBus> eventBus;
 
-float gameTimer;
-int score;
+// read in rounds data
+void InitGameManager() {
+	std::ifstream infile(ROUNDS_FILE_PATH);
+
+	std::vector<std::pair<int, int>> rounds;
+	std::string line;
+	while (std::getline(infile, line))
+	{
+		std::istringstream iss(line);
+		int enemies, balls;
+		if (!(iss >> enemies >> balls)) { break; } // error
+
+		// process pair (a,b)
+		rounds.push_back(std::make_pair(enemies, balls));
+	}
+
+	Entity gameManager = registry->CreateEntity();
+	gameManager.AddComponent<TextComponent>();
+	gameManager.AddComponent<ScriptedBehaviourComponent>(std::make_shared<GameManagerBehaviour>(rounds));
+	gameManager.Tag("manager");
+}
 
 //------------------------------------------------------------------------
 // Called before first update. Do any initial setup here.
@@ -51,19 +74,15 @@ void Init()
 	//Logger::Log("Game constructor called.");
 
 	//------------------------------------------------------------------------
-	Entity gameManager = registry->CreateEntity();
-	gameManager.AddComponent<TextComponent>();
-	gameManager.AddComponent<ScriptedBehaviourComponent>(std::make_shared<GameManagerBehaviour>());
-	gameManager.Tag("manager");
-
+	InitGameManager();
 	Entity player = registry->CreateEntity();
 	player.AddComponent<TransformComponent>(400.0f, 400.0f);
-	player.AddComponent<SpriteComponent>(".\\TestData\\blue_square.bmp", 1, 1, 1);
+	player.AddComponent<SpriteComponent>(".\\Data\\Sprites\\blue_square.bmp", 1, 1, 1);
 	player.AddComponent<AnimationComponent>();
 	player.AddComponent<RigidBodyComponent>();
 	player.AddComponent<BoxColliderComponent>(32,32);
-	player.AddComponent<HealthComponent>(200);
-	player.AddComponent<ProjectileEmitterComponent>(0.7, 0.7, 0, 3000, 10, true);
+	player.AddComponent<HealthComponent>(3);
+	player.AddComponent<ProjectileEmitterComponent>(0.7, 0.7, 0, 3000, 1, true);
 	player.AddComponent<TextComponent>();
 	player.AddComponent<ScriptedBehaviourComponent>(std::make_shared<PlayerBehaviour>());
 	player.Tag("player");	// tags are unique, one entity per tag
@@ -92,7 +111,7 @@ void Init()
 	wallLeft.AddComponent<BoxColliderComponent>(32, APP_VIRTUAL_HEIGHT);
 	wallLeft.Group("walls");
 	wallLeft.Group("reverseX");
-
+	
 	registry->AddSystem<MovementSystem>();
 	registry->AddSystem<RenderSystem>();
 	registry->AddSystem<AnimationSystem>();
@@ -106,9 +125,6 @@ void Init()
 	//registry->AddSystem<RenderHealthBarSystem>();
 	//registry->AddSystem<RenderGUISystem>();
 	registry->AddSystem<ScriptedBehaviourSystem>();
-
-	gameTimer = 0.0;
-	score = 0;
 }
 
 //------------------------------------------------------------------------
@@ -127,17 +143,21 @@ void Update(float deltaTime)
 	// update registry to process entities
 	registry->Update();
 
-	// invoke systems that need to update
-	//registry->GetSystem<PlayerAbilitiesSystem>().Update(eventBus, deltaTime);
-	registry->GetSystem<MovementSystem>().Update(deltaTime);
-	registry->GetSystem<AnimationSystem>().Update(deltaTime);
-	registry->GetSystem<CollisionSystem>().Update(eventBus);
-	//registry->GetSystem<CameraMovementSystem>().Update(camera);
-	registry->GetSystem<ProjectileEmitSystem>().Update(registry);
-	registry->GetSystem<ProjectileLifecycleSystem>().Update();
-	registry->GetSystem<ScriptedBehaviourSystem>().Update(eventBus, deltaTime);
+	Entity gameManager = registry->GetEntityByTag("manager");
+	auto& scriptedBehaviour = gameManager.GetComponent<ScriptedBehaviourComponent>();
+	auto& gameManagerBehaviour = std::static_pointer_cast<GameManagerBehaviour>(scriptedBehaviour.script);
 
-	gameTimer += deltaTime;
+	// invoke systems that need to update
+	// if the game is not active, only update scripted behaviours
+	 registry->GetSystem<ScriptedBehaviourSystem>().Update(eventBus, deltaTime);
+	if (gameManagerBehaviour->gameState == GAME_STATE::ACTIVE) {
+		registry->GetSystem<MovementSystem>().Update(deltaTime);
+		registry->GetSystem<AnimationSystem>().Update(deltaTime);
+		registry->GetSystem<CollisionSystem>().Update(eventBus);
+		registry->GetSystem<ProjectileEmitSystem>().Update(registry);
+		registry->GetSystem<ProjectileLifecycleSystem>().Update();
+	}
+	
 }
 
 //------------------------------------------------------------------------

@@ -51,7 +51,7 @@ public:
 	}
 
 	void Update(float deltaTime) {
-		for (auto entity : GetSystemEntities()) {
+		for (auto& entity : GetSystemEntities()) {
 			//update position based on velocity
 			auto& transform = entity.GetComponent<TransformComponent>();
 			auto& rigidbody = entity.GetComponent<RigidBodyComponent>();
@@ -65,7 +65,7 @@ public:
 			float vX = rigidbody.velocityX;
 			float vY = rigidbody.velocityY;
 			float mag = sqrtf(vX * vX + vY * vY);
-			if (mag < 0.01) {
+			if (mag < 0.05) {
 				rigidbody.velocityX = 0;
 				rigidbody.velocityY = 0;
 			}
@@ -88,9 +88,9 @@ public:
 				transform.y > APP_VIRTUAL_HEIGHT
 			);
 
-			if (isEntityOutsideMap && !entity.HasTag("player")) {
+			/*if (isEntityOutsideMap && !entity.HasTag("player")) {
 				entity.Kill();
-			}
+			}*/
 		}
 	}
 };

@@ -141,6 +141,12 @@
     <ClInclude Include="Engine\Scripts\EnemyBehaviour.h">
       <Filter>Engine\Scripts</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Events\ImportantEntityDiedEvent.h">
+      <Filter>Engine\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Events\ResetGameEvent.h">
+      <Filter>Engine\Events</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="stb_image">
@@ -157,9 +163,6 @@
     </Filter>
     <Filter Include="Engine\Components">
       <UniqueIdentifier>{6b09b02e-99db-483a-8821-35034c6a30c4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Engine\AssetStore">
-      <UniqueIdentifier>{f978837a-3372-4ff2-ac74-6125cd66d916}</UniqueIdentifier>
     </Filter>
     <Filter Include="Engine\ECS">
       <UniqueIdentifier>{80429b1d-e484-4e89-a657-3f38da8354f7}</UniqueIdentifier>

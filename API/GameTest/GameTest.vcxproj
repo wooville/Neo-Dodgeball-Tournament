@@ -198,6 +198,8 @@
     <ClInclude Include="Engine\EventBus\EventBus.h" />
     <ClInclude Include="Engine\Events\CollisionEvent.h" />
     <ClInclude Include="Engine\Events\BallThrowEvent.h" />
+    <ClInclude Include="Engine\Events\ImportantEntityDiedEvent.h" />
+    <ClInclude Include="Engine\Events\ResetGameEvent.h" />
     <ClInclude Include="Engine\Events\ScoreChangeEvent.h" />
     <ClInclude Include="Engine\Logger\Logger.h" />
     <ClInclude Include="Engine\Scripts\EnemyBehaviour.h" />

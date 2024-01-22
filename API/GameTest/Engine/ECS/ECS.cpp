@@ -151,6 +151,15 @@ std::vector<Entity> Registry::GetEntitiesByGroup(const std::string& group) const
 	return std::vector<Entity>(setOfEntities.begin(), setOfEntities.end());
 }
 
+int Registry::GetNumberOfEntitiesInGroup(const std::string& group) const {
+	if (entitiesPerGroup.find(group) != entitiesPerGroup.end()) {
+		return entitiesPerGroup.at(group).size();
+	}
+	else {
+		return -1;
+	}
+}
+
 void Registry::RemoveEntityGroup(Entity entity) {
 	// check if entity is in group and remove if so
 	auto groupedEntity = groupPerEntity.find(entity.GetId());
@@ -167,18 +176,10 @@ void Registry::RemoveEntityGroup(Entity entity) {
 }
 
 void Registry::Update() {
-	// Add entities that are waiting
-	for (auto entity : entitiesToBeAdded) {
-		AddEntityToSystems(entity);
-	}
-	entitiesToBeAdded.clear();
-
 	//remove similarly, updating freeIds for new entities to reuse later
 	for (auto entity : entitiesToBeKilled) {
 		RemoveEntityFromSystems(entity);
 		entityComponentSignatures[entity.GetId()].reset();
-
-		//Logger::Log("Entity id = " + std::to_string(entity.GetId()) + " was killed.");
 
 		// remove entity from component pools
 		for (auto pool : componentPools) {
@@ -194,4 +195,12 @@ void Registry::Update() {
 		RemoveEntityGroup(entity);
 	}
 	entitiesToBeKilled.clear();
+
+	// Add entities that are waiting
+	for (auto entity : entitiesToBeAdded) {
+		AddEntityToSystems(entity);
+	}
+	entitiesToBeAdded.clear();
+
+	
 }

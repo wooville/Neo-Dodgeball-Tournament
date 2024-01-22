@@ -26,7 +26,7 @@ public:
 
 		//if (thrower.HasTag("player")) {
 		auto& projectileEmitter = entity.GetComponent<ProjectileEmitterComponent>();
-		auto transform = entity.GetComponent<TransformComponent>();
+		auto& transform = entity.GetComponent<TransformComponent>();
 
 		float projectilePositionX = transform.x;
 		float projectilePositionY = transform.y;
@@ -48,16 +48,16 @@ public:
 		projectile.Group("projectiles");
 		projectile.AddComponent<TransformComponent>(projectilePositionX, projectilePositionY);
 		projectile.AddComponent<RigidBodyComponent>(projectileVelocityX, projectileVelocityY, 0.97f);
-		projectile.AddComponent<SpriteComponent>(".\\TestData\\projectile.bmp", 1, 1, 1);
+		projectile.AddComponent<SpriteComponent>(".\\Data\\Sprites\\projectile.bmp", 1, 1, 1);
 		projectile.AddComponent<BoxColliderComponent>(32, 32);
 		projectile.AddComponent<ProjectileComponent>(projectileEmitter.isFriendly, projectileEmitter.hitDamage, projectileEmitter.projectileDuration);
 		
 	}
 
 	void Update(std::unique_ptr<Registry>& registry) {
-		for (auto entity : GetSystemEntities()) {
+		for (auto& entity : GetSystemEntities()) {
 			auto& projectileEmitter = entity.GetComponent<ProjectileEmitterComponent>();
-			auto transform = entity.GetComponent<TransformComponent>();
+			auto& transform = entity.GetComponent<TransformComponent>();
 
 			if (projectileEmitter.repeatFreq == 0) {
 				continue;
@@ -68,7 +68,7 @@ public:
 				float projectilePositionX = transform.x;
 				float projectilePositionY = transform.y;
 				if (entity.HasComponent<SpriteComponent>()) {
-					const auto sprite = entity.GetComponent<SpriteComponent>();
+					const auto& sprite = entity.GetComponent<SpriteComponent>();
 					projectilePositionX += (transform.scale * sprite.width / 2);
 					projectilePositionY += (transform.scale * sprite.height / 2);
 				}
@@ -77,7 +77,7 @@ public:
 				projectile.Group("projectiles");
 				projectile.AddComponent<TransformComponent>(projectilePositionX, projectilePositionY);
 				projectile.AddComponent<RigidBodyComponent>(projectileEmitter.velocityX, projectileEmitter.velocityY);
-				projectile.AddComponent<SpriteComponent>(".\\TestData\\projectile.bmp", 1, 1, 1);
+				projectile.AddComponent<SpriteComponent>(".\\Data\\Sprites\\projectile.bmp", 1, 1, 1);
 				projectile.AddComponent<BoxColliderComponent>(32, 32);
 				projectile.AddComponent<ProjectileComponent>(projectileEmitter.isFriendly, projectileEmitter.hitDamage, projectileEmitter.projectileDuration);
 
