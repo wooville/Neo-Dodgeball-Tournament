@@ -11,14 +11,14 @@
 #include "../Scripts/PlayerBehaviour.h"
 #include "../Scripts/EnemyBehaviour.h"
 
-class DamageSystem : public System {
+class CollisionListenerSystem : public System {
 public:
-	DamageSystem() {
+	CollisionListenerSystem() {
 		RequireComponent<BoxColliderComponent>();
 	}
 
 	void SubscribeToEvents(std::unique_ptr<EventBus>& eventBus) {
-		eventBus->SubscribeToEvent<CollisionEvent>(this, &DamageSystem::onCollision);
+		eventBus->SubscribeToEvent<CollisionEvent>(this, &CollisionListenerSystem::onCollision);
 	}
 
 	void onCollision(CollisionEvent& event) {
@@ -98,8 +98,7 @@ public:
 			}
 			else if (enemyBehaviour->canTakeDamage)
 			{
-				health.health_val -= projectileComponent.hitDamage;
-				enemyBehaviour->TakeDamage(projectileComponent.hitDamage);
+				enemyBehaviour->TakeDamage(health, projectileComponent.hitDamage);
 				ReflectVelocity(projectile, enemy);
 			}
 		}
@@ -132,8 +131,8 @@ public:
 			}
 			else if (playerBehaviour->canTakeDamage)
 			{
-				health.health_val -= projectileComponent.hitDamage;
-				playerBehaviour->TakeDamage(projectileComponent.hitDamage);
+				//health.health_val -= projectileComponent.hitDamage;
+				playerBehaviour->TakeDamage(health, projectileComponent.hitDamage);
 				ReflectVelocity(projectile, player);
 			}
 		}
@@ -142,6 +141,7 @@ public:
 	// bounce off of each other
 	// projectile with the higher velocity converts the other projectile to its side
 	void onProjectileProjectileCollision(Entity p1, Entity p2) {
+		// I lost many hours of my life to this small block
 		/*auto pc1 = p1.GetComponent<ProjectileComponent>();
 		auto pc2 = p2.GetComponent<ProjectileComponent>();
 

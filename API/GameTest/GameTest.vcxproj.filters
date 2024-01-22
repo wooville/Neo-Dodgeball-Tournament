@@ -93,7 +93,7 @@
     <ClInclude Include="Engine\Systems\CollisionSystem.h">
       <Filter>Engine\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Systems\DamageSystem.h">
+    <ClInclude Include="Engine\Systems\CollisionListenerSystem.h">
       <Filter>Engine\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Systems\RenderSystem.h">

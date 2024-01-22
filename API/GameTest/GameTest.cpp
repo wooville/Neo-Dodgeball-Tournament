@@ -13,21 +13,14 @@
 #include "app\app.h"
 //------------------------------------------------------------------------
 #include "Engine/ECS/ECS.h"
-//#include "Engine/AssetStore/AssetStore.h"
 #include "Engine/Systems/MovementSystem.h"
 #include "Engine/Systems/RenderSystem.h"
 #include "Engine/Systems/AnimationSystem.h"
 #include "Engine/Systems/CollisionSystem.h"
-//#include "Engine/Systems/RenderColliderSystem.h"
-#include "Engine/Systems/DamageSystem.h"
-//#include "Engine/Systems/PlayerAbilitiesSystem.h"
-//#include "Engine/Systems/KeyboardControlSystem.h"
-//#include "Engine/Systems/CameraMovementSystem.h"
+#include "Engine/Systems/CollisionListenerSystem.h"
 #include "Engine/Systems/ProjectileEmitSystem.h"
 #include "Engine/Systems/ProjectileLifecycleSystem.h"
 #include "Engine/Systems/RenderTextSystem.h"
-//#include "Engine/Systems/RenderHealthBarSystem.h"
-//#include "Engine/Systems/RenderGUISystem.h"
 #include "Engine/Systems/ScriptedBehaviourSystem.h"
 
 #include "Engine/Scripts/GameManagerBehaviour.h"
@@ -37,6 +30,22 @@
 
 std::unique_ptr<Registry> registry;
 std::unique_ptr<EventBus> eventBus;
+
+void InitECS() {
+	srand(static_cast <unsigned> (time(0)));
+	registry = std::make_unique<Registry>();
+	eventBus = std::make_unique<EventBus>();
+
+	registry->AddSystem<MovementSystem>();
+	registry->AddSystem<RenderSystem>();
+	registry->AddSystem<AnimationSystem>();
+	registry->AddSystem<CollisionSystem>();
+	registry->AddSystem<CollisionListenerSystem>();
+	registry->AddSystem<ProjectileEmitSystem>();
+	registry->AddSystem<ProjectileLifecycleSystem>();
+	registry->AddSystem<RenderTextSystem>();
+	registry->AddSystem<ScriptedBehaviourSystem>();
+}
 
 // read in rounds data
 void InitGameManager() {
@@ -60,42 +69,30 @@ void InitGameManager() {
 	gameManager.Tag("manager");
 }
 
-//------------------------------------------------------------------------
-// Called before first update. Do any initial setup here.
-//------------------------------------------------------------------------
-void Init()
-{
-	srand(static_cast <unsigned> (time(0)));
-	//isRunning = false;
-	//isDebug = false;
-	registry = std::make_unique<Registry>();
-	//assetStore = std::make_unique<AssetStore>();
-	eventBus = std::make_unique<EventBus>();
-	//Logger::Log("Game constructor called.");
-
-	//------------------------------------------------------------------------
-	InitGameManager();
+void InitPlayer() {
 	Entity player = registry->CreateEntity();
-	player.AddComponent<TransformComponent>(400.0f, 400.0f);
+	player.AddComponent<TransformComponent>(SPAWN_COORD_X, SPAWN_COORD_Y);
 	player.AddComponent<SpriteComponent>(".\\Data\\Sprites\\blue_square.bmp", 1, 1, 1);
 	player.AddComponent<AnimationComponent>();
 	player.AddComponent<RigidBodyComponent>();
-	player.AddComponent<BoxColliderComponent>(32,32);
-	player.AddComponent<HealthComponent>(3);
+	player.AddComponent<BoxColliderComponent>(32, 32);
+	player.AddComponent<HealthComponent>(5);
 	player.AddComponent<ProjectileEmitterComponent>(0.7, 0.7, 0, 3000, 1, true);
 	player.AddComponent<TextComponent>();
 	player.AddComponent<ScriptedBehaviourComponent>(std::make_shared<PlayerBehaviour>());
 	player.Tag("player");	// tags are unique, one entity per tag
+}
 
+void InitWalls() {
 	// boundaries for ball collision
 	Entity wallTop = registry->CreateEntity();
-	wallTop.AddComponent<TransformComponent>(0.0f, APP_VIRTUAL_HEIGHT-2);
+	wallTop.AddComponent<TransformComponent>(0.0f, APP_VIRTUAL_HEIGHT - 2);
 	wallTop.AddComponent<BoxColliderComponent>(APP_VIRTUAL_WIDTH, 2);
 	wallTop.Group("walls");
 	wallTop.Group("reverseY");
 
 	Entity wallRight = registry->CreateEntity();
-	wallRight.AddComponent<TransformComponent>(APP_VIRTUAL_WIDTH-2, 0.0f);
+	wallRight.AddComponent<TransformComponent>(APP_VIRTUAL_WIDTH - 2, 0.0f);
 	wallRight.AddComponent<BoxColliderComponent>(2, APP_VIRTUAL_HEIGHT);
 	wallRight.Group("walls");
 	wallRight.Group("reverseX");
@@ -111,20 +108,18 @@ void Init()
 	wallLeft.AddComponent<BoxColliderComponent>(32, APP_VIRTUAL_HEIGHT);
 	wallLeft.Group("walls");
 	wallLeft.Group("reverseX");
-	
-	registry->AddSystem<MovementSystem>();
-	registry->AddSystem<RenderSystem>();
-	registry->AddSystem<AnimationSystem>();
-	registry->AddSystem<CollisionSystem>();
-	//registry->AddSystem<RenderColliderSystem>();
-	registry->AddSystem<DamageSystem>();
-	//registry->AddSystem<CameraMovementSystem>();
-	registry->AddSystem<ProjectileEmitSystem>();
-	registry->AddSystem<ProjectileLifecycleSystem>();
-	registry->AddSystem<RenderTextSystem>();
-	//registry->AddSystem<RenderHealthBarSystem>();
-	//registry->AddSystem<RenderGUISystem>();
-	registry->AddSystem<ScriptedBehaviourSystem>();
+}
+
+//------------------------------------------------------------------------
+// Called before first update. Do any initial setup here.
+//------------------------------------------------------------------------
+void Init()
+{
+	//------------------------------------------------------------------------
+	InitECS();
+	InitGameManager();
+	InitPlayer();
+	InitWalls();
 }
 
 //------------------------------------------------------------------------
@@ -136,7 +131,7 @@ void Update(float deltaTime)
 	eventBus->Reset();
 
 	// subscribe to events for all systems for current frame
-	registry->GetSystem<DamageSystem>().SubscribeToEvents(eventBus);
+	registry->GetSystem<CollisionListenerSystem>().SubscribeToEvents(eventBus);
 	registry->GetSystem<ProjectileEmitSystem>().SubscribeToEvents(eventBus);
 	registry->GetSystem<ScriptedBehaviourSystem>().SubscribeToEvents(eventBus);
 
@@ -157,7 +152,6 @@ void Update(float deltaTime)
 		registry->GetSystem<ProjectileEmitSystem>().Update(registry);
 		registry->GetSystem<ProjectileLifecycleSystem>().Update();
 	}
-	
 }
 
 //------------------------------------------------------------------------
@@ -168,31 +162,6 @@ void Render()
 {
 	registry->GetSystem<RenderSystem>().Update(registry);
 	registry->GetSystem<RenderTextSystem>().Update();
-
-	//App::Print(APP_VIRTUAL_WIDTH - 200, 150, "LT - Aim");
-
-	//------------------------------------------------------------------------
-	// Example Line Drawing.
-	//------------------------------------------------------------------------
-	//static float a = 0.0f;
-	//float r = 1.0f;
-	//float g = 1.0f;
-	//float b = 1.0f;
-	//a += 0.1f;
-	//for (int i = 0; i < 20; i++)
-	//{
-
-	//	float sx = 200 + sinf(a + i * 0.1f)*60.0f;
-	//	float sy = 200 + cosf(a + i * 0.1f)*60.0f;
-	//	float ex = 700 - sinf(a + i * 0.1f)*60.0f;
-	//	float ey = 700 - cosf(a + i * 0.1f)*60.0f;
-	//	g = (float)i / 20.0f;
-	//	b = (float)i / 20.0f;
-		//App::DrawLine(sx, sy, ex, ey,r,g,b);
-	//}
-
-	// TODO - draw colliders
-	//App::DrawLine();
 }
 
 //------------------------------------------------------------------------

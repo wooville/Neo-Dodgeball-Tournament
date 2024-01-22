@@ -198,8 +198,9 @@ public:
 		
 	}
 
-	void TakeDamage(int damage) {
+	void TakeDamage(HealthComponent& health, int damage) {
 		if (canTakeDamage) {
+			health.health_val -= damage;
 			canTakeDamage = false;
 			immunityTimer = 0.0f;
 		}

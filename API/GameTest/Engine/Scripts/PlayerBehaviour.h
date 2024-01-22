@@ -48,14 +48,10 @@ public:
 	float throwDirectionX = 0.0f;
 	float throwDirectionY = 0.0f;
 
-	PlayerBehaviour() {
-		//RequireComponent<PlayerAbilitiesComponent>();
-		//RequireComponent<TransformComponent>();
-		//RequireComponent<RigidBodyComponent>();
-	}
+	PlayerBehaviour() {}
 
 	void SubscribeToEvents(std::unique_ptr<EventBus>& eventBus) {
-		//eventBus->SubscribeToEvent<CollisionEvent>(this, &PlayerBehaviour::onCollision);
+		eventBus->SubscribeToEvent<ResetGameEvent>(this, &PlayerBehaviour::onResetGameEvent);
 	}
 
 	void Update(Entity entity, std::unique_ptr<EventBus>& eventBus, float deltaTime) {
@@ -79,8 +75,8 @@ public:
 		if (isDead) {
 			if (controller.CheckButton(XINPUT_GAMEPAD_A, true))
 			{
-				eventBus->EmitEvent<ResetGameEvent>(entity);
 				ResetPlayer(entity);
+				eventBus->EmitEvent<ResetGameEvent>(entity);
 			}
 		}
 		else {
@@ -269,8 +265,9 @@ public:
 		}
 	}
 
-	void TakeDamage(int damage) {
+	void TakeDamage(HealthComponent& health, int damage) {
 		if (canTakeDamage) {
+			health.health_val -= damage;
 			canTakeDamage = false;
 			immunityTimer = 0.0f;
 		}
@@ -291,11 +288,19 @@ public:
 		transform.x = SPAWN_COORD_X;
 		transform.y = SPAWN_COORD_Y;
 
-		health.health_val = 3;
+		health.health_val = 5;
 
 		rigidbody.velocityX = 0.0f;
 		rigidbody.velocityY = 0.0f;
 
+		canThrow = false;
 		isDead = false;
+	}
+
+	// cheeky last minute workaround to reuse resetgameevent
+	void onResetGameEvent(ResetGameEvent& event) {
+		if (event.a.HasTag("manager")) {
+			isDead = true;	
+		}
 	}
 };

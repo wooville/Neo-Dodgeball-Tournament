@@ -43,7 +43,6 @@ public:
 	GAME_STATE gameState = GAME_STATE::ACTIVE;
 	float gameTimer = 0.0f;
 	float roundStartTimer = 0.0f;
-	float roundTimer = 0.0f;
 	int score = 0;
 	int currentEnemies = 0;
 	int maxEnemies = 3;
@@ -51,6 +50,7 @@ public:
 	int maxBalls = 3;
 	int currentRound = 0;
 	bool roundStarted = false;
+	bool resetPlayer = false;
 
 	GameManagerBehaviour(std::vector<std::pair<int,int>> rounds) {
 		this->rounds = rounds;
@@ -65,15 +65,19 @@ public:
 	void Update(Entity entity, std::unique_ptr<EventBus>& eventBus, float deltaTime) {
 		maxEnemies = rounds[currentRound].first;
 		maxBalls = rounds[currentRound].second;
-		currentBalls = 0;
-		
 
-		// check total number of balls in play
+		currentBalls = 0;
+
+		if (!resetPlayer && gameState == GAME_WON) {
+			eventBus->EmitEvent<ResetGameEvent>(entity);
+		}
+
+		// check total number of balls in play to see if we need to spawn more
 		if (entity.registry->GetNumberOfEntitiesInGroup("pickups") > 0) {
 			std::vector<Entity> pickups = entity.registry->GetEntitiesByGroup("pickups");
 			currentBalls += pickups.size();
 		}
-		
+
 		if (entity.registry->GetNumberOfEntitiesInGroup("projectiles") > 0) {
 			std::vector<Entity> projectiles = entity.registry->GetEntitiesByGroup("projectiles");
 			currentBalls += projectiles.size();
@@ -97,43 +101,42 @@ public:
 		}
 
 		// pause non-scripted behaviours until round starts
-		// spawn enemies and balls for this round
+		// spawn enemies
 		if (!roundStarted) {
 			gameState = GAME_STATE::PAUSED;
-			roundTimer += deltaTime;
+			roundStartTimer += deltaTime;
+			
 			
 			while (currentEnemies < maxEnemies) {
 				// spawn enemy at random spot
 				SpawnEnemy(entity);
 			}
-			while (currentBalls < maxBalls) {
-				// spawn ball at random spot
-				SpawnPickup(entity);
-			}
 		}
 
+		while (currentBalls < maxBalls) {
+			// spawn ball at random spot
+			SpawnPickup(entity);
+		}
+
+		// start round after timer pops
 		if (!roundStarted && roundStartTimer > ROUND_START_INTERVAL) {
 			roundStarted = true;
 			roundStartTimer = 0.0f;
 			gameState = GAME_STATE::ACTIVE;
 		}
 
-		/*if (pickupSpawnTimer > PICKUP_SPAWN_INTERVAL && currentBalls < maxBalls) {
-			SpawnPickup(entity);
-			pickupSpawnTimer = 0.0f;
-		}*/
-
 		// if all enemies are eliminated, start the next round
 		// if that was the final round, player wins
-		if (currentEnemies == 0 && currentRound < rounds.size()-1) {
+		if (currentEnemies == 0 && currentRound < rounds.size()) {
 			currentRound++;
 			roundStarted = false;
 			roundStartTimer = 0.0f;
 		}
-		else if (currentRound == rounds.size() - 1) {
+		else if (currentRound == rounds.size()) {
 			EndGame(true);
 		}
 
+		// update text to be rendered depending on game state
 		auto& textComponent = entity.GetComponent<TextComponent>();
 		if (gameState == GAME_STATE::GAME_WON) {
 			UpdateTextWon(textComponent);
@@ -144,8 +147,7 @@ public:
 		else {
 			UpdateTextActive(textComponent);
 		}
-
-		roundStartTimer += deltaTime;
+		
 		if (gameState == GAME_STATE::ACTIVE) {
 			gameTimer += deltaTime;
 		}
@@ -157,7 +159,7 @@ public:
 		std::pair<float, float> coords = std::make_pair(MAIN_MESSAGE_COORD_X, MAIN_MESSAGE_COORD_Y);
 		textToRender.emplace_back(coords, "YOU WIN");
 
-		coords = std::make_pair(MAIN_MESSAGE_COORD_X, MAIN_MESSAGE_COORD_Y);
+		coords = std::make_pair(MAIN_MESSAGE_COORD_X, MAIN_MESSAGE_COORD_Y-50.f);
 		textToRender.emplace_back(coords, "PRESS A TO PLAY AGAIN");
 
 		textComponent.textToRender = textToRender;
@@ -208,33 +210,35 @@ public:
 	void onResetGameEvent(ResetGameEvent& event) {
 		Entity e = event.a;
 
-		// remove all entities except for player
-		if (e.registry->GetNumberOfEntitiesInGroup("pickups") > 0) {
-			for (Entity e : e.registry->GetEntitiesByGroup("pickups")) {
-				e.Kill();
+		if (!event.a.HasTag("manager")) {
+			// remove all entities except for player
+			if (e.registry->GetNumberOfEntitiesInGroup("pickups") > 0) {
+				for (Entity e : e.registry->GetEntitiesByGroup("pickups")) {
+					e.Kill();
+				}
 			}
-		}
 
-		if (e.registry->GetNumberOfEntitiesInGroup("projectiles") > 0) {
-			for (Entity e : e.registry->GetEntitiesByGroup("projectiles")) {
-				e.Kill();
+			if (e.registry->GetNumberOfEntitiesInGroup("projectiles") > 0) {
+				for (Entity e : e.registry->GetEntitiesByGroup("projectiles")) {
+					e.Kill();
+				}
 			}
-		}
 
-		if (e.registry->GetNumberOfEntitiesInGroup("enemies") > 0) {
-			for (Entity e : e.registry->GetEntitiesByGroup("enemies")) {
-				e.Kill();
+			if (e.registry->GetNumberOfEntitiesInGroup("enemies") > 0) {
+				for (Entity e : e.registry->GetEntitiesByGroup("enemies")) {
+					e.Kill();
+				}
 			}
-		}
 
-		currentRound = 0;
-		currentEnemies = 0;
-		currentBalls = 0;
-		roundStarted = false;
-		roundTimer = 0.0f;
-		gameTimer = 0.0f;
-		score = 0;
-		gameState = GAME_STATE::ACTIVE;
+			currentRound = 0;
+			currentEnemies = 0;
+			currentBalls = 0;
+			roundStarted = false;
+			roundStartTimer = 0.0f;
+			gameTimer = 0.0f;
+			score = 0;
+			gameState = GAME_STATE::ACTIVE;
+		}
 	}
 
 	void SpawnEnemy(Entity entity){
@@ -245,8 +249,8 @@ public:
 		newEnemy.AddComponent<SpriteComponent>(".\\Data\\Sprites\\red_square.bmp", 1, 1);
 		newEnemy.AddComponent<RigidBodyComponent>();
 		newEnemy.AddComponent<BoxColliderComponent>(32, 32);
-		newEnemy.AddComponent<HealthComponent>(20);
-		newEnemy.AddComponent<ProjectileEmitterComponent>(0.7, 0.7, 0, 3000, 10, false);
+		newEnemy.AddComponent<HealthComponent>(1);
+		newEnemy.AddComponent<ProjectileEmitterComponent>(0.7, 0.7, 0, 3000, 1, false);
 		newEnemy.AddComponent<ScriptedBehaviourComponent>(std::make_shared<EnemyBehaviour>());
 		newEnemy.Group("enemies");
 		currentEnemies++;
