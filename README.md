@@ -8,7 +8,7 @@ Here’s the repo for the implementation of the engine that I created while lear
 
 https://github.com/wooville/wooEngine
 
-All of the code for this submission was written by me, but I learned the basic ECS concepts from this course and heavily modified my implementation of the engine outlined in the course from two years ago to create something new here.
+All of the code for this submission was written by me, but I learned the basic ECS concepts from this course and heavily modified my implementation of the engine from two years ago to create something new here.
 
 ## ECS Implementation
 This engine uses a basic ECS implementation of Entity, Component, and System classes. Components and Systems use template types so that their functions can be used generically for each specific Component/System. A Registry class organizes the E/C/S in use. Template types are used for scalability of components and systems by allowing generic functionality for those components and systems.
