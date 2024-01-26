@@ -1,5 +1,15 @@
 https://github.com/wooville/UTN2023/assets/47064476/86101d48-2fa1-47d7-8480-10a3f08617db
 
+I built this submission off of my own implementation of an ECS game engine which I created a couple of years ago while following this course by Gustavo Pezzi:
+
+https://pikuma.com/courses/cpp-2d-game-engine-development
+
+Here’s the repo for the implementation of the engine that I created while learning the concepts from Gustavo’s course:
+
+https://github.com/wooville/wooEngine
+
+All of the code for this submission was written by me, but I learned the basic ECS concepts from this course and heavily modified my implementation of the engine outlined in the course from two years ago to create something new here.
+
 ## ECS Implementation
 This engine uses a basic ECS implementation of Entity, Component, and System classes. Components and Systems use template types so that their functions can be used generically for each specific Component/System. A Registry class organizes the E/C/S in use. Template types are used for scalability of components and systems by allowing generic functionality for those components and systems.
 
